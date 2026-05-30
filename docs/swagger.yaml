@@ -1,0 +1,387 @@
+basePath: /
+definitions:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.CreateUserBody:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      password:
+        maxLength: 255
+        minLength: 6
+        type: string
+      role:
+        enum:
+        - admin
+        - guest
+        - manager
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - role
+    type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 1
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse'
+    type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.UpdateUserBody:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      password:
+        maxLength: 255
+        minLength: 6
+        type: string
+      role:
+        enum:
+        - admin
+        - guest
+        - manager
+        type: string
+    required:
+    - email
+    - name
+    - role
+    type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.UserPaginatedResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@lidar-platform.io
+    name: API Support
+  description: REST API for the Lidar Platform — user management, point cloud processing,
+    and device telemetry.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  title: Lidar Platform API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate with email and password. Returns a JWT Bearer token.
+      parameters:
+      - description: Credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.LoginResponse'
+        "400":
+          description: Bad request — validation failed
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+      summary: Login
+      tags:
+      - auth
+  /users:
+    get:
+      description: Returns a paginated list of users with optional filtering by role,
+        name and email.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Sort direction
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      - description: Filter by role
+        enum:
+        - admin
+        - guest
+        - manager
+        in: query
+        name: role
+        type: string
+      - description: Filter by name (case-insensitive partial match)
+        in: query
+        name: name
+        type: string
+      - description: Filter by email (case-insensitive partial match)
+        in: query
+        name: email
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserPaginatedResponse'
+        "400":
+          description: Bad request — invalid query parameters
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account. Email must be unique. Password is bcrypt-hashed.
+        **Requires admin role.**
+      parameters:
+      - description: User creation payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.CreateUserBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse'
+        "400":
+          description: Bad request — validation failed
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "403":
+          description: Forbidden — admin role required
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "409":
+          description: Conflict — email already exists
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new user
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      description: Permanently removes a user (soft-delete via GORM deleted_at). **Requires
+        admin role.** Self-deletion is forbidden.
+      parameters:
+      - description: User ID
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content — user deleted
+        "400":
+          description: Bad request — invalid ID
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "403":
+          description: Forbidden — admin role required or self-deletion
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete user
+      tags:
+      - users
+    get:
+      description: Returns a single user by its database ID.
+      parameters:
+      - description: User ID
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse'
+        "400":
+          description: Bad request — invalid ID
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Updates user fields. If password is omitted, the existing password
+        is preserved. **Requires admin role.**
+      parameters:
+      - description: User ID
+        in: path
+        minimum: 1
+        name: id
+        required: true
+        type: integer
+      - description: Fields to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UpdateUserBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse'
+        "400":
+          description: Bad request — validation failed
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "403":
+          description: Forbidden — admin role required
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update existing user
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    description: 'JWT Bearer token. Example: "Bearer eyJhbGciOiJIUzI1NiIs..."'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

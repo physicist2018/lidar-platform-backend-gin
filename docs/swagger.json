@@ -1,0 +1,573 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "REST API for the Lidar Platform — user management, point cloud processing, and device telemetry.",
+        "title": "Lidar Platform API",
+        "contact": {
+            "name": "API Support",
+            "email": "support@lidar-platform.io"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate with email and password. Returns a JWT Bearer token.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login",
+                "parameters": [
+                    {
+                        "description": "Credentials",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request — validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a paginated list of users with optional filtering by role, name and email.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "List all users",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "description": "Sort direction",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "admin",
+                            "guest",
+                            "manager"
+                        ],
+                        "type": "string",
+                        "description": "Filter by role",
+                        "name": "role",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by name (case-insensitive partial match)",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by email (case-insensitive partial match)",
+                        "name": "email",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserPaginatedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request — invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new user account. Email must be unique. Password is bcrypt-hashed. **Requires admin role.**",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Create a new user",
+                "parameters": [
+                    {
+                        "description": "User creation payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.CreateUserBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request — validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden — admin role required",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict — email already exists",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single user by its database ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get user by ID",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request — invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates user fields. If password is omitted, the existing password is preserved. **Requires admin role.**",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update existing user",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UpdateUserBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request — validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden — admin role required",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Permanently removes a user (soft-delete via GORM deleted_at). **Requires admin role.** Self-deletion is forbidden.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete user",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content — user deleted"
+                    },
+                    "400": {
+                        "description": "Bad request — invalid ID",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden — admin role required or self-deletion",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.CreateUserBody": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password",
+                "role"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 6
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "guest",
+                        "manager"
+                    ]
+                }
+            }
+        },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                }
+            }
+        },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.UpdateUserBody": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "role"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 6
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "guest",
+                        "manager"
+                    ]
+                }
+            }
+        },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.UserPaginatedResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total_items": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "JWT Bearer token. Example: \"Bearer eyJhbGciOiJIUzI1NiIs...\"",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

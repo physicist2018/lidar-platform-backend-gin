@@ -1,0 +1,36 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/app
+/migrate
+/seeder
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+
+# Test coverage
+*.out
+*.test
+
+# Dependencies
+vendor/
+
+# Swagger (generated — keep docs.go but ignore if you prefer)
+# docs/ is committed intentionally
+
+# Build
+bin/
+dist/
