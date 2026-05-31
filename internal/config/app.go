@@ -18,7 +18,9 @@ import (
 	dsImpl "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/persistance/implementation"
 	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/db"
 	repoImpl "github.com/kshmirko/lidar-platform-go/internal/infrastructure/repository"
+	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/storage"
 	"github.com/kshmirko/lidar-platform-go/internal/utils/auth"
+	"github.com/kshmirko/lidar-platform-go/internal/utils/worker"
 )
 
 type BootstrapConfig struct {
@@ -27,6 +29,7 @@ type BootstrapConfig struct {
 	Log             *logrus.Logger
 	CacheTTLDefault time.Duration
 	GinEngine       *gin.Engine
+	WorkerPool      *worker.Pool
 }
 
 // Initialize builds the full dependency graph.
@@ -43,6 +46,23 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("initialize redis: %w", err)
 	}
+
+	// Minio client
+	minioClient, err := storage.NewMinioClient(
+		cfg.MinioEndpoint, cfg.MinioAccessKey, cfg.MinioSecretKey,
+		cfg.MinioBucket, cfg.MinioUseSSL, log,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("initialize minio: %w", err)
+	}
+
+	// Worker pool
+	maxWorkers := cfg.MaxWorkers
+	if maxWorkers <= 0 {
+		maxWorkers = 4
+	}
+	workerPool := worker.NewPool(maxWorkers, log)
+	workerPool.Start(maxWorkers)
 
 	ginEngine := gin.Default()
 	ginEngine.Use(otelgin.Middleware("lidar-platform"))
@@ -70,7 +90,17 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	)
 	authController := controller.NewAuthController(log, loginUC)
 
-	route.NewRouteConfig(ginEngine, cfg.JWTSecret, userController, authController).Setup()
+	// --- Wire Experiment domain ---
+	expDataSource := dsImpl.NewExperimentDataSourceImpl(dbConn, log)
+	expRepo := repoImpl.NewExperimentRepositoryImpl(expDataSource, log)
+
+	createExpUC := usecaseImpl.NewCreateExperimentUseCaseImpl(expRepo, minioClient, workerPool, log)
+	getExpByIDUC := usecaseImpl.NewGetExperimentByIDUseCaseImpl(expRepo, log)
+	getAllExpUC := usecaseImpl.NewGetAllExperimentsUseCaseImpl(expRepo, log)
+
+	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC)
+
+	route.NewRouteConfig(ginEngine, cfg.JWTSecret, userController, authController, expController).Setup()
 
 	return &BootstrapConfig{
 		DB:              dbConn,
@@ -78,5 +108,6 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 		Log:             log,
 		CacheTTLDefault: cfg.CacheTTLDefault,
 		GinEngine:       ginEngine,
+		WorkerPool:      workerPool,
 	}, nil
 }

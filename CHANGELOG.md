@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] — 2026-05-31
+
+### Added
+
+- **Experiment entity** — хранение лидарных измерений с асинхронным препроцессингом:
+  - `entity.Experiment` с полями `ID`, `Title`, `Comments`, `MeasurementStartTime`, `MeasurementStopTime`,
+    `LicelZipPath`, `LicelBgrPath`, `MeteoFilePath`, `Status`, `ErrorMsg`.
+  - Статусная машина: `staged → uploading → done | failed` с валидацией переходов (`ValidateTransition`).
+  - `POST /experiments` (multipart: `title`, `licelZip`, `licelBgr`, `meteoFile`) — создаёт эксперимент со статусом `staged`,
+    немедленно возвращает `201`, асинхронно обрабатывает через worker pool.
+  - `GET /experiments` — пагинированный список с фильтрацией по `status` и `title`.
+  - `GET /experiments/:id` — получение одного эксперимента.
+- **Worker pool** (`internal/utils/worker/pool.go`):
+  - Канальный пул горутин, размер задаётся `MAX_WORKERS` (default=4).
+  - `Start()`, `Submit(task)`, graceful `Shutdown()`.
+- **Minio storage** (`internal/infrastructure/storage/minio.go`):
+  - Клиент для S3-совместимого хранилища (Minio).
+  - `UploadFile()`, авто-создание bucket при старте.
+  - Конфигурация: `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_USE_SSL`.
+- **licelfile интеграция** (`github.com/physicist2018/licelfile/v2` v2.1.2):
+  - Парсинг ZIP-архива licel-файлов в горутине для извлечения `MeasurementStartTime` (минимальное) и `MeasurementStopTime` (максимальное) по всем файлам в пачке.
+
+### Preprocessing flow (goroutine)
+
+1. `status → uploading`
+2. `licelformat.NewLicelPackFromZip(tempDir/licel.zip)` → ищет min(MeasurementStartTime) и max(MeasurementStopTime)
+3. `minio.Upload(experiments/{id}/source/licel.zip)`
+4. `minio.Upload(experiments/{id}/source/bgr.dat)`
+5. `minio.Upload(experiments/{id}/source/meteo.dat)`
+6. `status → done` (запись таймстемпов и путей в Minio)
+7. `os.RemoveAll(tempDir)`
+
+При любой ошибке → `status → failed` + `error_msg`.
+
 ## [0.1.0] — 2026-05-30
 
 ### Added

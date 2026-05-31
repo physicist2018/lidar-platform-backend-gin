@@ -20,9 +20,12 @@ func main() {
 	}
 
 	log.Println("Running auto-migration...")
-	if err := dbConn.AutoMigrate(&dbEntity.UserEntity{}); err != nil {
+	if err := dbConn.AutoMigrate(
+		&dbEntity.UserEntity{},
+		&dbEntity.ExperimentEntity{},
+	); err != nil {
 		log.Fatalf("auto-migration failed: %v", err)
 	}
 
-	log.Println("Migration completed successfully: users")
+	log.Println("Migration completed successfully: users, experiments")
 }

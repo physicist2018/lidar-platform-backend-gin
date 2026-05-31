@@ -72,6 +72,16 @@ go run ./cmd/app
 | `PUT` | `/users/:id` | **admin** | Обновить |
 | `DELETE` | `/users/:id` | **admin** | Удалить (soft-delete) |
 
+### Experiments (требуется аутентификация)
+
+| Метод | Путь | Роль | Описание |
+|---|---|---|---|
+| `GET` | `/experiments` | Любая | Список с пагинацией / фильтрацией (`status`, `title`) |
+| `GET` | `/experiments/:id` | Любая | Получить один (со статусом и путями к файлам) |
+| `POST` | `/experiments` | **admin** | Создать (multipart: `title`, `licelZip`, `licelBgr`, `meteoFile`) |
+
+> **POST /experiments** — возвращает `201` сразу со статусом `staged`. Препроцессинг (парсинг licel zip, загрузка в Minio) выполняется асинхронно в worker pool. Статус обновляется: `staged → uploading → done|failed`.
+
 ### Swagger UI
 
 ```
@@ -89,6 +99,12 @@ REDIS_DB=0
 CACHE_TTL_DEFAULT=15m
 JWT_SECRET=change-me-in-production-use-a-256-bit-random-key
 JWT_EXPIRATION=24h
+MAX_WORKERS=4
+MINIO_ENDPOINT=localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=lidar-experiments
+MINIO_USE_SSL=false
 ```
 
 ## Структура проекта
@@ -102,23 +118,25 @@ cmd/
 internal/
 ├── config/              # Viper config + DI composition root
 ├── delivery/http/
-│   ├── controller/      # Gin-контроллеры
+│   ├── controller/      # Gin-контроллеры (user, experiment)
 │   ├── middleware/       # Auth, AdminOnly
 │   └── route/           # Регистрация роутов
 ├── domain/
-│   ├── entity/          # Бизнес-модели
+│   ├── entity/          # Бизнес-модели (User, Experiment)
 │   ├── repository/      # Интерфейсы репозиториев
 │   └── usecase/         # Use-case интерфейсы + реализация
 ├── infrastructure/
 │   ├── datasource/      # GORM entities, persistance, cache
 │   ├── db/              # PostgreSQL, Redis подключения
-│   └── repository/      # Реализация cache-aside репозиториев
+│   ├── repository/      # Реализация cache-aside репозиториев
+│   └── storage/         # Minio/S3 клиент
 └── utils/
     ├── auth/            # JWT (generate, parse)
     ├── hash/            # bcrypt
     ├── mapper/          # Entity ↔ Domain ↔ DTO
     ├── pagination/      # Дженерик-пагинация
-    └── response/        # AppError
+    ├── response/        # AppError
+    └── worker/          # Worker pool (MAX_WORKERS)
 
 pkg/dto/                 # Публичные DTO (запросы/ответы)
 docs/                    # Swagger (авто-генерируется)

@@ -10,18 +10,26 @@ import (
 )
 
 type RouteConfig struct {
-	App            *gin.Engine
-	JWTSecret      string
-	UserController *controller.UserController
-	AuthController *controller.AuthController
+	App                  *gin.Engine
+	JWTSecret            string
+	UserController       *controller.UserController
+	AuthController       *controller.AuthController
+	ExperimentController *controller.ExperimentController
 }
 
-func NewRouteConfig(app *gin.Engine, jwtSecret string, uc *controller.UserController, ac *controller.AuthController) *RouteConfig {
+func NewRouteConfig(
+	app *gin.Engine,
+	jwtSecret string,
+	uc *controller.UserController,
+	ac *controller.AuthController,
+	ec *controller.ExperimentController,
+) *RouteConfig {
 	return &RouteConfig{
-		App:            app,
-		JWTSecret:      jwtSecret,
-		UserController: uc,
-		AuthController: ac,
+		App:                  app,
+		JWTSecret:            jwtSecret,
+		UserController:       uc,
+		AuthController:       ac,
+		ExperimentController: ec,
 	}
 }
 
@@ -39,6 +47,7 @@ func (rc *RouteConfig) Setup() {
 	protected.Use(middleware.AuthMiddleware(rc.JWTSecret))
 	{
 		rc.SetupUserRoutes(protected)
+		rc.SetupExperimentRoutes(protected)
 	}
 }
 
@@ -55,6 +64,21 @@ func (rc *RouteConfig) SetupUserRoutes(rg *gin.RouterGroup) {
 			admin.POST("/", rc.UserController.Create)
 			admin.PUT("/:id", rc.UserController.Update)
 			admin.DELETE("/:id", rc.UserController.Delete)
+		}
+	}
+}
+
+func (rc *RouteConfig) SetupExperimentRoutes(rg *gin.RouterGroup) {
+	expRoutes := rg.Group("/experiments")
+	{
+		expRoutes.GET("/", rc.ExperimentController.GetAll)
+		expRoutes.GET("/:id", rc.ExperimentController.GetByID)
+
+		// Admin-only routes
+		admin := expRoutes.Group("")
+		admin.Use(middleware.AdminOnly())
+		{
+			admin.POST("/", rc.ExperimentController.Create)
 		}
 	}
 }

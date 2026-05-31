@@ -15,6 +15,12 @@ type Config struct {
 	CacheTTLDefault time.Duration `mapstructure:"CACHE_TTL_DEFAULT"`
 	JWTSecret       string        `mapstructure:"JWT_SECRET"`
 	JWTExpiration   time.Duration `mapstructure:"JWT_EXPIRATION"`
+	MaxWorkers      int           `mapstructure:"MAX_WORKERS"`
+	MinioEndpoint   string        `mapstructure:"MINIO_ENDPOINT"`
+	MinioAccessKey  string        `mapstructure:"MINIO_ACCESS_KEY"`
+	MinioSecretKey  string        `mapstructure:"MINIO_SECRET_KEY"`
+	MinioBucket     string        `mapstructure:"MINIO_BUCKET"`
+	MinioUseSSL     bool          `mapstructure:"MINIO_USE_SSL"`
 }
 
 func LoadConfig(path string) (*Config, error) {
