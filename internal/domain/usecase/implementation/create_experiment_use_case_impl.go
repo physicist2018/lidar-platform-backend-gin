@@ -128,14 +128,16 @@ func (u *createExperimentUseCaseImpl) preprocess(expID uint, tempDir, zipPath, b
 	}
 
 	var minStart, maxStop time.Time
-	for _, lf := range pack.Data {
-		if minStart.IsZero() || lf.MeasurementStartTime.Before(minStart) {
-			minStart = lf.MeasurementStartTime
-		}
-		if lf.MeasurementStopTime.After(maxStop) {
-			maxStop = lf.MeasurementStopTime
-		}
-	}
+	minStart = pack.StartTime
+	maxStop = pack.StopTime
+	// for _, lf := range pack.Data {
+	// 	if minStart.IsZero() || lf.MeasurementStartTime.Before(minStart) {
+	// 		minStart = lf.MeasurementStartTime
+	// 	}
+	// 	if lf.MeasurementStopTime.After(maxStop) {
+	// 		maxStop = lf.MeasurementStopTime
+	// 	}
+	// }
 
 	// 3. Upload files to Minio
 	basePath := fmt.Sprintf("experiments/%d/source", expID)

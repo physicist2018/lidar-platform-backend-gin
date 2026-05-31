@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.2] — 2026-05-31
+
+### Changed
+
+- **licelfile v2.1.2 → v2.1.4** — обновлена библиотека парсинга licel-файлов.
+  `pack.StartTime` и `pack.StopTime` теперь возвращают min/max таймстемпов по всей пачке автоматически,
+  что позволило убрать ручную итерацию по `pack.Data` при извлечении `MeasurementStartTime` и
+  `MeasurementStopTime`.
+
 ## [0.2.1] — 2026-05-31
 
 ### Fixed
