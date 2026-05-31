@@ -31,6 +31,48 @@ definitions:
       message:
         type: string
     type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse:
+    properties:
+      comments:
+        type: string
+      created_at:
+        type: string
+      error_msg:
+        type: string
+      id:
+        type: integer
+      licel_bgr_path:
+        type: string
+      licel_zip_path:
+        type: string
+      measurement_start_time:
+        type: string
+      measurement_stop_time:
+        type: string
+      meteo_file_path:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
   github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest:
     properties:
       email:
@@ -141,6 +183,158 @@ paths:
       summary: Login
       tags:
       - auth
+  /experiments:
+    get:
+      description: Returns a paginated list of experiments with optional filtering.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - description: Sort direction
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sort
+        type: string
+      - description: Filter by status
+        enum:
+        - staged
+        - uploading
+        - done
+        - failed
+        in: query
+        name: status
+        type: string
+      - description: Filter by title (case-insensitive partial match)
+        in: query
+        name: title
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all experiments
+      tags:
+      - experiments
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads licel zip, bgr and meteo files, creates an experiment and
+        starts asynchronous preprocessing.
+      parameters:
+      - description: Experiment title
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: Experiment comments
+        in: formData
+        name: comments
+        type: string
+      - description: Licel measurements zip archive
+        in: formData
+        name: licelZip
+        required: true
+        type: file
+      - description: Licel BGR file
+        in: formData
+        name: licelBgr
+        required: true
+        type: file
+      - description: Meteo data file
+        in: formData
+        name: meteoFile
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create experiment
+      tags:
+      - experiments
+  /experiments/{id}:
+    get:
+      description: Returns a single experiment by its database ID.
+      parameters:
+      - description: Experiment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get experiment by ID
+      tags:
+      - experiments
   /users:
     get:
       description: Returns a paginated list of users with optional filtering by role,

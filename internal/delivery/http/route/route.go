@@ -54,14 +54,14 @@ func (rc *RouteConfig) Setup() {
 func (rc *RouteConfig) SetupUserRoutes(rg *gin.RouterGroup) {
 	userRoutes := rg.Group("/users")
 	{
-		userRoutes.GET("/", rc.UserController.GetAll)
+		userRoutes.GET("", rc.UserController.GetAll)
 		userRoutes.GET("/:id", rc.UserController.GetByID)
 
 		// Admin-only routes
 		admin := userRoutes.Group("")
 		admin.Use(middleware.AdminOnly())
 		{
-			admin.POST("/", rc.UserController.Create)
+			admin.POST("", rc.UserController.Create)
 			admin.PUT("/:id", rc.UserController.Update)
 			admin.DELETE("/:id", rc.UserController.Delete)
 		}
@@ -71,14 +71,14 @@ func (rc *RouteConfig) SetupUserRoutes(rg *gin.RouterGroup) {
 func (rc *RouteConfig) SetupExperimentRoutes(rg *gin.RouterGroup) {
 	expRoutes := rg.Group("/experiments")
 	{
-		expRoutes.GET("/", rc.ExperimentController.GetAll)
+		expRoutes.GET("", rc.ExperimentController.GetAll)
 		expRoutes.GET("/:id", rc.ExperimentController.GetByID)
 
 		// Admin-only routes
 		admin := expRoutes.Group("")
 		admin.Use(middleware.AdminOnly())
 		{
-			admin.POST("/", rc.ExperimentController.Create)
+			admin.POST("", rc.ExperimentController.Create)
 		}
 	}
 }

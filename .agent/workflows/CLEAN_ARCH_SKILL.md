@@ -204,9 +204,9 @@ Add route group in `internal/delivery/http/route/route.go`:
 func (rc *RouteConfig) SetupOrderRoutes() {
     orderRoutes := rc.App.Group("/order")
     {
-        orderRoutes.GET("/", rc.OrderController.GetAll)
+        orderRoutes.GET("", rc.OrderController.GetAll)
         orderRoutes.GET("/:id", rc.OrderController.GetByID)
-        orderRoutes.POST("/", rc.OrderController.Create)
+        orderRoutes.POST("", rc.OrderController.Create)
     }
 }
 ```
