@@ -316,18 +316,15 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToSVG(
 	cellW := plotW / float64(nTime)
 	cellH := plotH / float64(nDist)
 
-	// Find min/max for color scaling
-	zMin, zMax := zT[0][0], zT[0][0]
+	// Collect values and compute 5th–95th percentile range for color scaling.
+	// This clips outliers and improves contrast in the heatmap.
+	allVals := make([]float64, 0, nTime*nDist)
 	for _, row := range zT {
-		for _, v := range row {
-			if v < zMin {
-				zMin = v
-			}
-			if v > zMax {
-				zMax = v
-			}
-		}
+		allVals = append(allVals, row...)
 	}
+	sort.Float64s(allVals)
+	zMin := percentile(allVals, 0.05)
+	zMax := percentile(allVals, 0.95)
 	if zMax == zMin {
 		zMax = zMin + 1
 	}
@@ -441,6 +438,21 @@ func minInt(a, b int) int {
 	return b
 }
 
+// percentile returns the value at the given percentile (0..1) using linear interpolation.
+// The input slice must be sorted in ascending order.
+func percentile(sorted []float64, p float64) float64 {
+	if len(sorted) == 0 {
+		return 0
+	}
+	k := p * float64(len(sorted)-1)
+	f := math.Floor(k)
+	c := math.Ceil(k)
+	if f == c {
+		return sorted[int(k)]
+	}
+	return sorted[int(f)]*(c-k) + sorted[int(c)]*(k-f)
+}
+
 // applyFormula transforms profile data in-place according to the formula:
 // "raw" — P (no change), "rangecorr" — P × r², "lograngecorr" — log₁₀(P × r²).
 func applyFormula(data []float64, formula string, binWidth float64) {
@@ -448,6 +460,9 @@ func applyFormula(data []float64, formula string, binWidth float64) {
 	case "rangecorr":
 		for i, v := range data {
 			r := float64(i) * binWidth / 1000.0
+			if v < 0 {
+				v = 0
+			}
 			data[i] = v * r * r
 		}
 	case "lograngecorr":
