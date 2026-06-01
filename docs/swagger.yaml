@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  dto.CreateUserBody:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.CreateUserBody:
     properties:
       email:
         type: string
@@ -24,16 +24,29 @@ definitions:
     - password
     - role
     type: object
-  dto.ErrorResponse:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse:
     properties:
       error:
         type: string
       message:
         type: string
     type: object
-  dto.ExperimentPaginatedResponse:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
     type: object
-  dto.ExperimentResponse:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse:
     properties:
       comments:
         type: string
@@ -62,7 +75,7 @@ definitions:
       user_id:
         type: integer
     type: object
-  dto.LoginRequest:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest:
     properties:
       email:
         type: string
@@ -73,14 +86,14 @@ definitions:
     - email
     - password
     type: object
-  dto.LoginResponse:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.LoginResponse:
     properties:
       token:
         type: string
       user:
-        $ref: '#/definitions/dto.UserResponse'
+        $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse'
     type: object
-  dto.PrepareExperimentBody:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.PrepareExperimentBody:
     properties:
       bgr_alt:
         minimum: 0
@@ -98,7 +111,7 @@ definitions:
     - bgr_type
     - crop_alt
     type: object
-  dto.PreparedExperimentResponse:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.PreparedExperimentResponse:
     properties:
       bgr_alt:
         type: number
@@ -119,7 +132,7 @@ definitions:
       user_id:
         type: integer
     type: object
-  dto.UpdateUserBody:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.UpdateUserBody:
     properties:
       email:
         type: string
@@ -142,11 +155,11 @@ definitions:
     - name
     - role
     type: object
-  dto.UserPaginatedResponse:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.UserPaginatedResponse:
     properties:
       data:
         items:
-          $ref: '#/definitions/dto.UserResponse'
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse'
         type: array
       limit:
         type: integer
@@ -157,7 +170,7 @@ definitions:
       total_pages:
         type: integer
     type: object
-  dto.UserResponse:
+  github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse:
     properties:
       email:
         type: string
@@ -192,22 +205,22 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/dto.LoginRequest'
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.LoginResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.LoginResponse'
         "400":
           description: Bad request — validation failed
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "401":
           description: Invalid credentials
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
       summary: Login
       tags:
       - auth
@@ -254,19 +267,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.ExperimentPaginatedResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse'
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all experiments
@@ -308,19 +321,19 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/dto.ExperimentResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse'
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create experiment
@@ -341,23 +354,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.ExperimentResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse'
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get experiment by ID
@@ -380,34 +393,34 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/dto.PrepareExperimentBody'
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.PrepareExperimentBody'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/dto.PreparedExperimentResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.PreparedExperimentResponse'
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "404":
           description: Experiment not found
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "409":
           description: Experiment not ready
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Prepare experiment data
@@ -475,19 +488,19 @@ paths:
         "400":
           description: Bad request
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "404":
           description: Not found
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Visualize prepared experiment data
@@ -540,19 +553,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.UserPaginatedResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserPaginatedResponse'
         "400":
           description: Bad request — invalid query parameters
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
       security:
       - BearerAuth: []
       summary: List all users
@@ -569,34 +582,34 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/dto.CreateUserBody'
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.CreateUserBody'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/dto.UserResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse'
         "400":
           description: Bad request — validation failed
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "403":
           description: Forbidden — admin role required
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "409":
           description: Conflict — email already exists
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Create a new user
@@ -621,23 +634,23 @@ paths:
         "400":
           description: Bad request — invalid ID
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "403":
           description: Forbidden — admin role required or self-deletion
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Delete user
@@ -658,23 +671,23 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.UserResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse'
         "400":
           description: Bad request — invalid ID
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Get user by ID
@@ -697,34 +710,34 @@ paths:
         name: body
         required: true
         schema:
-          $ref: '#/definitions/dto.UpdateUserBody'
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UpdateUserBody'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.UserResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse'
         "400":
           description: Bad request — validation failed
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "403":
           description: Forbidden — admin role required
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "404":
           description: User not found
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            $ref: '#/definitions/dto.ErrorResponse'
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
       security:
       - BearerAuth: []
       summary: Update existing user

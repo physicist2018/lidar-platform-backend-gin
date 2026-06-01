@@ -300,8 +300,8 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToSVG(
 	zData [][]float64,
 	titleSuffix string,
 ) (*usecase.VisualizeResult, error) {
-	width, height := 900, 650
-	marginLeft, marginRight, marginTop, marginBottom := 70.0, 55.0, 40.0, 80.0
+	width, height := 950, 650
+	marginLeft, marginRight, marginTop, marginBottom := 70.0, 100.0, 40.0, 80.0
 	plotW := float64(width) - marginLeft - marginRight
 	plotH := float64(height) - marginTop - marginBottom
 
@@ -442,7 +442,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToSVG(
 	}
 	sb.WriteString(fmt.Sprintf(`<rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" fill="none" stroke="black"/>`, barX, barY, barW, barH))
 
-	// Colorbar ticks (≥5 evenly spaced)
+	// Colorbar ticks (≥5 evenly spaced, labels on the right)
 	numTicks := 5
 	tickLen := 6.0
 	for k := 0; k <= numTicks; k++ {
@@ -451,11 +451,11 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToSVG(
 		val := zMin + (1.0-frac)*(zMax-zMin)
 		sb.WriteString(fmt.Sprintf(
 			`<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="black" stroke-width="1"/>`,
-			barX-tickLen, tickY, barX, tickY,
+			barX+barW, tickY, barX+barW+tickLen, tickY,
 		))
 		sb.WriteString(fmt.Sprintf(
-			`<text x="%.1f" y="%.1f" text-anchor="end" font-size="10" font-family="sans-serif">%.2e</text>`,
-			barX-tickLen-3, tickY+4, val,
+			`<text x="%.1f" y="%.1f" text-anchor="start" font-size="10" font-family="sans-serif">%.2e</text>`,
+			barX+barW+tickLen+3, tickY+4, val,
 		))
 	}
 
@@ -665,8 +665,8 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPNG(
 	zData [][]float64,
 	titleSuffix string,
 ) (*usecase.VisualizeResult, error) {
-	width, height := 900, 650
-	marginLeft, marginRight, marginTop, marginBottom := 70.0, 55.0, 40.0, 80.0
+	width, height := 950, 650
+	marginLeft, marginRight, marginTop, marginBottom := 70.0, 100.0, 40.0, 80.0
 	plotW := float64(width) - marginLeft - marginRight
 	plotH := float64(height) - marginTop - marginBottom
 
@@ -801,7 +801,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPNG(
 	dc.DrawRectangle(barX, barY, barW, barH)
 	dc.Stroke()
 
-	// Colorbar ticks (≥5 evenly spaced)
+	// Colorbar ticks (≥5 evenly spaced, labels on the right)
 	tickFont, _ := loadFont(10)
 	dc.SetFontFace(tickFont)
 	numTicks := 5
@@ -810,9 +810,9 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPNG(
 		frac := 1.0 - float64(k)/float64(numTicks)
 		tickY := barY + frac*barH
 		val := zMin + (1.0-frac)*(zMax-zMin)
-		dc.DrawLine(barX-tickLen, tickY, barX, tickY)
+		dc.DrawLine(barX+barW, tickY, barX+barW+tickLen, tickY)
 		dc.Stroke()
-		dc.DrawStringAnchored(fmt.Sprintf("%.2e", val), barX-tickLen-3, tickY+4, 1, 0.5)
+		dc.DrawStringAnchored(fmt.Sprintf("%.2e", val), barX+barW+tickLen+3, tickY+4, 0, 0.5)
 	}
 
 	var buf bytes.Buffer
