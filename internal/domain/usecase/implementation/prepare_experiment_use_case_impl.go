@@ -61,8 +61,8 @@ func (u *prepareExperimentUseCaseImpl) Execute(
 		return nil, fmt.Errorf("experiment %d must be in 'done' status, current: %s", experimentID, exp.Status)
 	}
 
-	// Build the target Minio path for processed data
-	pathToData := fmt.Sprintf("experiments/%d/processed/dats.zip", experimentID)
+	// Build the target Minio path for prepared data
+	pathToData := fmt.Sprintf("experiments/%d/prepared/licel-prepared.zip", experimentID)
 
 	prep := &entity.PreparedExperiment{
 		UserID:       userID,
