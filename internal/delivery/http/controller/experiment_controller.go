@@ -239,9 +239,9 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 //	@Param			photon		path		bool	true	"Photon channel"
 //	@Param			polarization	path		string	true	"Polarization"
 //	@Param			action		path		string	true	"image or profile"	Enums(image, profile)
-//	@Param			type		query		string	false	"Output type: svg or json"	Enums(svg, json)	default(svg)
+//	@Param			type		query		string	false	"Output type: svg, json or png"	Enums(svg, json, png)	default(svg)
 //	@Param			formula		query		string	false	"Signal formula: raw, rangecorr, lograngecorr"	Enums(raw, rangecorr, lograngecorr)	default(raw)
-//	@Success		200			{string}	string	"SVG image or Plotly JSON"
+//	@Success		200			{string}	string	"SVG, PNG image or Plotly JSON"
 //	@Failure		400			{object}	dto.ErrorResponse	"Bad request"
 //	@Failure		401			{object}	dto.ErrorResponse	"Unauthorized"
 //	@Failure		404			{object}	dto.ErrorResponse	"Not found"

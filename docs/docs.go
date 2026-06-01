@@ -42,7 +42,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest"
+                            "$ref": "#/definitions/dto.LoginRequest"
                         }
                     }
                 ],
@@ -50,19 +50,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.LoginResponse"
+                            "$ref": "#/definitions/dto.LoginResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request — validation failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Invalid credentials",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -134,25 +134,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse"
+                            "$ref": "#/definitions/dto.ExperimentPaginatedResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -214,25 +214,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse"
+                            "$ref": "#/definitions/dto.ExperimentResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -266,31 +266,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse"
+                            "$ref": "#/definitions/dto.ExperimentResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -328,7 +328,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.PrepareExperimentBody"
+                            "$ref": "#/definitions/dto.PrepareExperimentBody"
                         }
                     }
                 ],
@@ -336,37 +336,37 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.PreparedExperimentResponse"
+                            "$ref": "#/definitions/dto.PreparedExperimentResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Experiment not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Experiment not ready",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -431,11 +431,12 @@ const docTemplate = `{
                     {
                         "enum": [
                             "svg",
-                            "json"
+                            "json",
+                            "png"
                         ],
                         "type": "string",
                         "default": "svg",
-                        "description": "Output type: svg or json",
+                        "description": "Output type: svg, json or png",
                         "name": "type",
                         "in": "query"
                     },
@@ -454,7 +455,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "SVG image or Plotly JSON",
+                        "description": "SVG, PNG image or Plotly JSON",
                         "schema": {
                             "type": "string"
                         }
@@ -462,25 +463,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -557,25 +558,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserPaginatedResponse"
+                            "$ref": "#/definitions/dto.UserPaginatedResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request — invalid query parameters",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -604,7 +605,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.CreateUserBody"
+                            "$ref": "#/definitions/dto.CreateUserBody"
                         }
                     }
                 ],
@@ -612,37 +613,37 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request — validation failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden — admin role required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict — email already exists",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -677,31 +678,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request — invalid ID",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -738,7 +739,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UpdateUserBody"
+                            "$ref": "#/definitions/dto.UpdateUserBody"
                         }
                     }
                 ],
@@ -746,37 +747,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                            "$ref": "#/definitions/dto.UserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request — validation failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden — admin role required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -812,31 +813,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad request — invalid ID",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden — admin role required or self-deletion",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     }
                 }
@@ -844,7 +845,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.CreateUserBody": {
+        "dto.CreateUserBody": {
             "type": "object",
             "required": [
                 "email",
@@ -876,7 +877,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse": {
+        "dto.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -887,30 +888,10 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse"
-                    }
-                },
-                "limit": {
-                    "type": "integer"
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "total_items": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
-                }
-            }
+        "dto.ExperimentPaginatedResponse": {
+            "type": "object"
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse": {
+        "dto.ExperimentResponse": {
             "type": "object",
             "properties": {
                 "comments": {
@@ -954,7 +935,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest": {
+        "dto.LoginRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -970,18 +951,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.LoginResponse": {
+        "dto.LoginResponse": {
             "type": "object",
             "properties": {
                 "token": {
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                    "$ref": "#/definitions/dto.UserResponse"
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.PrepareExperimentBody": {
+        "dto.PrepareExperimentBody": {
             "type": "object",
             "required": [
                 "bgr_type",
@@ -1006,7 +987,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.PreparedExperimentResponse": {
+        "dto.PreparedExperimentResponse": {
             "type": "object",
             "properties": {
                 "bgr_alt": {
@@ -1038,7 +1019,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.UpdateUserBody": {
+        "dto.UpdateUserBody": {
             "type": "object",
             "required": [
                 "email",
@@ -1069,13 +1050,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.UserPaginatedResponse": {
+        "dto.UserPaginatedResponse": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                        "$ref": "#/definitions/dto.UserResponse"
                     }
                 },
                 "limit": {
@@ -1092,7 +1073,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse": {
+        "dto.UserResponse": {
             "type": "object",
             "properties": {
                 "email": {

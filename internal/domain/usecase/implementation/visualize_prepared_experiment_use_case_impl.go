@@ -1,9 +1,11 @@
 package implementation
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"image/png"
 	"math"
 	"os"
 	"path/filepath"
@@ -11,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fogleman/gg"
 	"github.com/physicist2018/licelfile/v2/licelformat"
 	"github.com/sirupsen/logrus"
 
@@ -206,6 +209,8 @@ func (u *visualizePreparedExperimentUseCaseImpl) genHeatmap(
 	switch outputType {
 	case "json":
 		return u.heatmapToPlotly(timeLabels, distanceLabels, zData, titleSuffix)
+	case "png":
+		return u.heatmapToPNG(timeLabels, distanceLabels, zData, titleSuffix)
 	default:
 		return u.heatmapToSVG(timeLabels, distanceLabels, zData, titleSuffix)
 	}
@@ -271,6 +276,8 @@ func (u *visualizePreparedExperimentUseCaseImpl) genProfile(
 	switch outputType {
 	case "json":
 		return u.profileToPlotly(distance, avgData, titleSuffix)
+	case "png":
+		return u.profileToPNG(distance, avgData, titleSuffix)
 	default:
 		return u.profileToSVG(distance, avgData, titleSuffix)
 	}
@@ -278,9 +285,9 @@ func (u *visualizePreparedExperimentUseCaseImpl) genProfile(
 
 // ========================= SVG generation =========================
 
-// formatTimeHHMM formats a Unix timestamp as HH:MM.
+// formatTimeHHMM formats a Unix timestamp as HH:MM in local time.
 func formatTimeHHMM(unix int64) string {
-	t := time.Unix(unix, 0).UTC()
+	t := time.Unix(unix, 0)
 	return fmt.Sprintf("%02d:%02d", t.Hour(), t.Minute())
 }
 
@@ -353,6 +360,24 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToSVG(
 		}
 	}
 
+	// Grid lines (horizontal & vertical, dashed)
+	numHGrid := 8
+	for k := 0; k <= numHGrid; k++ {
+		y := marginTop + float64(k)*plotH/float64(numHGrid)
+		sb.WriteString(fmt.Sprintf(
+			`<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="#ddd" stroke-width="0.5" stroke-dasharray="3,3"/>`,
+			marginLeft, y, marginLeft+plotW, y,
+		))
+	}
+	numVGrid := minInt(10, nTime-1)
+	for k := 0; k <= numVGrid; k++ {
+		x := marginLeft + float64(k)*plotW/float64(numVGrid)
+		sb.WriteString(fmt.Sprintf(
+			`<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="#ddd" stroke-width="0.5" stroke-dasharray="3,3"/>`,
+			x, marginTop, x, marginTop+plotH,
+		))
+	}
+
 	// Y-axis (distance) labels — flipped: k=0 → bottom, k=max → top
 	numYLabels := 8
 	for k := 0; k <= numYLabels; k++ {
@@ -413,14 +438,23 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToSVG(
 		))
 	}
 	sb.WriteString(fmt.Sprintf(`<rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" fill="none" stroke="black"/>`, barX, barY, barW, barH))
-	sb.WriteString(fmt.Sprintf(
-		`<text x="%.1f" y="%.1f" font-size="9" font-family="sans-serif">%.2e</text>`,
-		barX+barW+3, barY+barH, zMin,
-	))
-	sb.WriteString(fmt.Sprintf(
-		`<text x="%.1f" y="%.1f" font-size="9" font-family="sans-serif">%.2e</text>`,
-		barX+barW+3, barY+9, zMax,
-	))
+
+	// Colorbar ticks (≥5 evenly spaced)
+	numTicks := 5
+	tickLen := 6.0
+	for k := 0; k <= numTicks; k++ {
+		frac := 1.0 - float64(k)/float64(numTicks) // 0=bottom, 1=top
+		tickY := barY + frac*barH
+		val := zMin + (1.0-frac)*(zMax-zMin)
+		sb.WriteString(fmt.Sprintf(
+			`<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="black" stroke-width="1"/>`,
+			barX-tickLen, tickY, barX, tickY,
+		))
+		sb.WriteString(fmt.Sprintf(
+			`<text x="%.1f" y="%.1f" text-anchor="end" font-size="10" font-family="sans-serif">%.2e</text>`,
+			barX-tickLen-3, tickY+4, val,
+		))
+	}
 
 	sb.WriteString(`</svg>`)
 
@@ -618,6 +652,316 @@ func (u *visualizePreparedExperimentUseCaseImpl) profileToSVG(
 		ContentType: "image/svg+xml",
 		Body:        []byte(sb.String()),
 	}, nil
+}
+
+// ========================= PNG generation =========================
+
+func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPNG(
+	timeLabels []string,
+	distanceLabels []string,
+	zData [][]float64,
+	titleSuffix string,
+) (*usecase.VisualizeResult, error) {
+	width, height := 900, 650
+	marginLeft, marginRight, marginTop, marginBottom := 70.0, 55.0, 40.0, 80.0
+	plotW := float64(width) - marginLeft - marginRight
+	plotH := float64(height) - marginTop - marginBottom
+
+	nTime := len(zData)          // columns → X = time
+	nDist := len(distanceLabels) // rows → Y = distance
+	if nTime == 0 || nDist == 0 {
+		return nil, fmt.Errorf("empty data for heatmap")
+	}
+
+	// Transpose: zT[dist][time]
+	zT := make([][]float64, nDist)
+	for d := 0; d < nDist; d++ {
+		row := make([]float64, nTime)
+		for t := 0; t < nTime; t++ {
+			if d < len(zData[t]) {
+				row[t] = zData[t][d]
+			}
+		}
+		zT[d] = row
+	}
+
+	cellW := plotW / float64(nTime)
+	cellH := plotH / float64(nDist)
+
+	// Percentile range for color scaling
+	allVals := make([]float64, 0, nTime*nDist)
+	for _, row := range zT {
+		allVals = append(allVals, row...)
+	}
+	sort.Float64s(allVals)
+	zMin := percentile(allVals, 0.05)
+	zMax := percentile(allVals, 0.95)
+	if zMax == zMin {
+		zMax = zMin + 1
+	}
+
+	dc := gg.NewContext(width, height)
+	dc.SetRGB(1, 1, 1)
+	dc.Clear()
+
+	// Title
+	dc.SetRGB(0, 0, 0)
+	if loadErr := dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 16); loadErr != nil {
+		// fallback: try common Linux font
+		if loadErr := dc.LoadFontFace("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16); loadErr != nil {
+			return nil, fmt.Errorf("load font: %w", loadErr)
+		}
+	}
+	dc.DrawStringAnchored("Lidar Heatmap"+titleSuffix, float64(width/2), 25, 0.5, 0.5)
+
+	// Draw cells — flipped Y: d=0 at bottom
+	for d := 0; d < nDist; d++ {
+		for t := 0; t < nTime; t++ {
+			val := zT[d][t]
+			rr, g, b := heatmapColor((val - zMin) / (zMax - zMin))
+			x := marginLeft + float64(t)*cellW
+			y := marginTop + float64(nDist-1-d)*cellH
+			dc.SetRGB(float64(rr)/255, float64(g)/255, float64(b)/255)
+			dc.DrawRectangle(x, y, cellW+1, cellH+1)
+			dc.Fill()
+		}
+	}
+
+	// Grid lines (horizontal & vertical, dashed pattern via manual dash)
+	dc.SetRGBA(0.85, 0.85, 0.85, 0.6)
+	numHGrid := 8
+	for k := 0; k <= numHGrid; k++ {
+		y := marginTop + float64(k)*plotH/float64(numHGrid)
+		drawDashedLineH(dc, marginLeft, marginLeft+plotW, y, 3, 3)
+	}
+	numVGrid := minInt(10, nTime-1)
+	for k := 0; k <= numVGrid; k++ {
+		x := marginLeft + float64(k)*plotW/float64(numVGrid)
+		drawDashedLineV(dc, x, marginTop, marginTop+plotH, 3, 3)
+	}
+
+	// Axis lines
+	dc.SetRGB(0, 0, 0)
+	dc.SetLineWidth(1)
+	dc.DrawLine(marginLeft, marginTop, marginLeft, marginTop+plotH)
+	dc.Stroke()
+	dc.DrawLine(marginLeft, marginTop+plotH, marginLeft+plotW, marginTop+plotH)
+	dc.Stroke()
+
+	// Set font for labels
+	_ = dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 10)
+
+	// Y-axis (distance) labels
+	numYLabels := 8
+	for k := 0; k <= numYLabels; k++ {
+		idx := int(float64(k) / float64(numYLabels) * float64(nDist-1))
+		if idx >= nDist {
+			idx = nDist - 1
+		}
+		y := marginTop + float64(nDist-1-idx)*cellH + cellH/2
+		dc.DrawStringAnchored(distanceLabels[idx]+" m", marginLeft-5, y+4, 1, 0.5)
+	}
+
+	// X-axis (time) labels
+	numXLabels := minInt(10, nTime-1)
+	dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 9)
+	for k := 0; k <= numXLabels; k++ {
+		idx := int(float64(k) / float64(numXLabels) * float64(nTime-1))
+		if idx >= nTime {
+			idx = nTime - 1
+		}
+		x := marginLeft + float64(idx)*cellW + cellW/2
+		dc.DrawStringAnchored(timeLabels[idx], x, marginTop+plotH+15, 0.5, 0)
+	}
+
+	// Axis titles
+	dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 12)
+	dc.Push()
+	dc.Translate(15, marginTop+plotH/2)
+	dc.Rotate(-math.Pi / 2)
+	dc.DrawStringAnchored("Distance, m", 0, 0, 0.5, 0.5)
+	dc.Pop()
+	dc.DrawStringAnchored("Time, HH:MM", marginLeft+plotW/2, marginTop+plotH+40, 0.5, 0)
+
+	// Color bar
+	barX, barY, barW, barH := marginLeft+plotW+10, marginTop, 15.0, plotH
+	for k := 0; k < 100; k++ {
+		t := float64(k) / 100.0
+		rr, g, b := heatmapColor(t)
+		y := barY + barH - (t * barH)
+		dc.SetRGB(float64(rr)/255, float64(g)/255, float64(b)/255)
+		dc.DrawRectangle(barX, y, barW, barH/100+1)
+		dc.Fill()
+	}
+	dc.SetRGB(0, 0, 0)
+	dc.SetLineWidth(1)
+	dc.DrawRectangle(barX, barY, barW, barH)
+	dc.Stroke()
+
+	// Colorbar ticks (≥5 evenly spaced)
+	numTicks := 5
+	tickLen := 6.0
+	dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 10)
+	for k := 0; k <= numTicks; k++ {
+		frac := 1.0 - float64(k)/float64(numTicks)
+		tickY := barY + frac*barH
+		val := zMin + (1.0-frac)*(zMax-zMin)
+		dc.DrawLine(barX-tickLen, tickY, barX, tickY)
+		dc.Stroke()
+		dc.DrawStringAnchored(fmt.Sprintf("%.2e", val), barX-tickLen-3, tickY+4, 1, 0.5)
+	}
+
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, dc.Image()); err != nil {
+		return nil, fmt.Errorf("encode png: %w", err)
+	}
+
+	return &usecase.VisualizeResult{
+		ContentType: "image/png",
+		Body:        buf.Bytes(),
+	}, nil
+}
+
+func (u *visualizePreparedExperimentUseCaseImpl) profileToPNG(
+	distance []float64,
+	data []float64,
+	titleSuffix string,
+) (*usecase.VisualizeResult, error) {
+	width, height := 800, 500
+	marginLeft, marginRight, marginTop, marginBottom := 70.0, 30.0, 40.0, 60.0
+	plotW := float64(width) - marginLeft - marginRight
+	plotH := float64(height) - marginTop - marginBottom
+
+	n := len(data)
+	if n == 0 {
+		return nil, fmt.Errorf("empty profile data")
+	}
+
+	xMin, xMax := distance[0], distance[n-1]
+	yMin, yMax := data[0], data[0]
+	for _, v := range data {
+		if v < yMin {
+			yMin = v
+		}
+		if v > yMax {
+			yMax = v
+		}
+	}
+	if yMax == yMin {
+		yMax = yMin + 1
+	}
+
+	xScale := func(v float64) float64 {
+		return marginLeft + (v-xMin)/(xMax-xMin)*plotW
+	}
+	yScale := func(v float64) float64 {
+		return marginTop + plotH - (v-yMin)/(yMax-yMin)*plotH
+	}
+
+	dc := gg.NewContext(width, height)
+	dc.SetRGB(1, 1, 1)
+	dc.Clear()
+
+	// Load font
+	if err := dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 12); err != nil {
+		if err := dc.LoadFontFace("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 12); err != nil {
+			return nil, fmt.Errorf("load font: %w", err)
+		}
+	}
+
+	// Title
+	dc.SetRGB(0, 0, 0)
+	dc.DrawStringAnchored("Averaged Profile"+titleSuffix, float64(width/2), 25, 0.5, 0.5)
+
+	// Axis lines
+	dc.SetLineWidth(1)
+	dc.DrawLine(marginLeft, marginTop, marginLeft, marginTop+plotH)
+	dc.Stroke()
+	dc.DrawLine(marginLeft, marginTop+plotH, marginLeft+plotW, marginTop+plotH)
+	dc.Stroke()
+
+	// Grid lines
+	dc.SetRGBA(0.85, 0.85, 0.85, 0.6)
+	for k := 0; k <= 5; k++ {
+		y := marginTop + float64(k)*plotH/5.0
+		dc.DrawLine(marginLeft, y, marginLeft+plotW, y)
+		dc.Stroke()
+	}
+
+	// Data polyline
+	dc.SetRGB(0.13, 0.59, 0.95) // #2196F3
+	dc.SetLineWidth(1.5)
+	dc.MoveTo(xScale(distance[0]), yScale(data[0]))
+	for i := 1; i < n; i++ {
+		dc.LineTo(xScale(distance[i]), yScale(data[i]))
+	}
+	dc.Stroke()
+
+	// X-axis labels
+	dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 10)
+	numXLabels := 6
+	for k := 0; k <= numXLabels; k++ {
+		idx := int(float64(k) / float64(numXLabels) * float64(n-1))
+		if idx >= n {
+			idx = n - 1
+		}
+		val := distance[idx]
+		x := xScale(val)
+		dc.DrawStringAnchored(fmt.Sprintf("%.0f", val), x, marginTop+plotH+15, 0.5, 0)
+	}
+
+	// Y-axis labels
+	numYLabels := 5
+	for k := 0; k <= numYLabels; k++ {
+		frac := float64(k) / float64(numYLabels)
+		val := yMin + frac*(yMax-yMin)
+		y := yScale(val)
+		dc.DrawStringAnchored(fmt.Sprintf("%.2e", val), marginLeft-5, y+3, 1, 0.5)
+	}
+
+	// Axis titles
+	dc.Push()
+	dc.Translate(15, marginTop+plotH/2)
+	dc.Rotate(-math.Pi / 2)
+	dc.DrawStringAnchored("Intensity", 0, 0, 0.5, 0.5)
+	dc.Pop()
+	dc.DrawStringAnchored("Distance, m", marginLeft+plotW/2, marginTop+plotH+35, 0.5, 0)
+
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, dc.Image()); err != nil {
+		return nil, fmt.Errorf("encode png: %w", err)
+	}
+
+	return &usecase.VisualizeResult{
+		ContentType: "image/png",
+		Body:        buf.Bytes(),
+	}, nil
+}
+
+// drawDashedLineH draws a horizontal dashed line made of individual segments.
+func drawDashedLineH(dc *gg.Context, x1, x2, y, dashLen, gapLen float64) {
+	segLen := dashLen + gapLen
+	for x := x1; x < x2; x += segLen {
+		endX := x + dashLen
+		if endX > x2 {
+			endX = x2
+		}
+		dc.DrawLine(x, y, endX, y)
+		dc.Stroke()
+	}
+}
+
+// drawDashedLineV draws a vertical dashed line made of individual segments.
+func drawDashedLineV(dc *gg.Context, x, y1, y2, dashLen, gapLen float64) {
+	segLen := dashLen + gapLen
+	for y := y1; y < y2; y += segLen {
+		endY := y + dashLen
+		if endY > y2 {
+			endY = y2
+		}
+		dc.DrawLine(x, y, x, endY)
+		dc.Stroke()
+	}
 }
 
 // ========================= Plotly JSON generation =========================
