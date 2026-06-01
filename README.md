@@ -85,9 +85,9 @@ go run ./cmd/app
 
 | Метод | Путь | Роль | Описание |
 |---|---|---|---|
-| `GET` | `/prepared/:id/:wavelen/:photon/:polarization/:action` | **admin, manager** | Визуализация: heatmap или профиль (`?type=svg|json`) |
+| `GET` | `/prepared/:id/:wavelen/:photon/:polarization/:action` | **admin, manager** | Визуализация: heatmap или профиль (`?type=svg|json&formula=raw|rangecorr|lograngecorr`) |
 
-> **GET /prepared/:id/:wavelen/:photon/:polarization/:action** — `:action` = `image` (heatmap: X=время, Y=дистанция) или `profile` (усреднённый XY-график). `:wavelen` — длина волны (например `532`), `:photon` — `true` (фотонный) или `false` (аналоговый). Параметр `type=svg` (по умолчанию) возвращает SVG-изображение, `type=json` — Plotly-совместимый JSON.
+> **GET /prepared/:id/:wavelen/:photon/:polarization/:action** — `:action` = `image` (heatmap: X=время, Y=дистанция) или `profile` (усреднённый XY-график). `:wavelen` — длина волны (например `532`), `:photon` — `true` (фотонный) или `false` (аналоговый). `type=svg` (по умолчанию) — SVG-изображение, `type=json` — Plotly JSON. `formula=raw` — сырой сигнал P, `rangecorr` — P×r², `lograngecorr` — log₁₀(P×r²).
 
 > **POST /experiments** — возвращает `201` сразу со статусом `staged`. Препроцессинг (парсинг licel zip, загрузка в Minio) выполняется асинхронно в worker pool. Статус обновляется: `staged → uploading → done|failed`.
 

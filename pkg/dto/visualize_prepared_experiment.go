@@ -9,7 +9,8 @@ type VisualizePreparedExperimentURI struct {
 	Action       string  `uri:"action" binding:"required,oneof=image profile"`
 }
 
-// VisualizeTypeQuery binds the type query parameter.
+// VisualizeTypeQuery binds the type and formula query parameters.
 type VisualizeTypeQuery struct {
-	Type string `form:"type"`
+	Type    string `form:"type"`
+	Formula string `form:"formula"`
 }

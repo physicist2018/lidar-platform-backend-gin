@@ -232,8 +232,7 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 //	@Summary		Visualize prepared experiment data
 //	@Description	Generates a heatmap or averaged profile from prepared experiment data. Returns SVG or Plotly JSON.
 //	@Tags			experiments
-//	@Produce		json
-//	@Produce		svg
+//	@Produce		*/*
 //	@Security		BearerAuth
 //	@Param			id			path		uint	true	"Prepared experiment ID"
 //	@Param			wavelen		path		float64	true	"Wavelength"
@@ -241,7 +240,8 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 //	@Param			polarization	path		string	true	"Polarization"
 //	@Param			action		path		string	true	"image or profile"	Enums(image, profile)
 //	@Param			type		query		string	false	"Output type: svg or json"	Enums(svg, json)	default(svg)
-//	@Success		200			{string}	string	"SVG or JSON"
+//	@Param			formula		query		string	false	"Signal formula: raw, rangecorr, lograngecorr"	Enums(raw, rangecorr, lograngecorr)	default(raw)
+//	@Success		200			{string}	string	"SVG image or Plotly JSON"
 //	@Failure		400			{object}	dto.ErrorResponse	"Bad request"
 //	@Failure		401			{object}	dto.ErrorResponse	"Unauthorized"
 //	@Failure		404			{object}	dto.ErrorResponse	"Not found"
@@ -259,6 +259,9 @@ func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 	if query.Type == "" {
 		query.Type = "svg"
 	}
+	if query.Formula == "" {
+		query.Formula = "raw"
+	}
 
 	result, err := ctrl.VisualizePreparedExperimentUC.Execute(
 		c.Request.Context(),
@@ -268,6 +271,7 @@ func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 		uri.Polarization,
 		uri.Action,
 		query.Type,
+		query.Formula,
 	)
 	if err != nil {
 		c.Error(err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -58,9 +59,16 @@ func (u *visualizePreparedExperimentUseCaseImpl) Execute(
 	polarization string,
 	vizType string,
 	outputType string,
+	formula string,
 ) (*usecase.VisualizeResult, error) {
 	if outputType == "" {
 		outputType = defaultOutputType
+	}
+	if formula == "" {
+		formula = "raw"
+	}
+	if formula != "raw" && formula != "rangecorr" && formula != "lograngecorr" {
+		return nil, fmt.Errorf("unknown formula: %s (valid: raw, rangecorr, lograngecorr)", formula)
 	}
 
 	// 1. Find PreparedExperiment
@@ -107,9 +115,9 @@ func (u *visualizePreparedExperimentUseCaseImpl) Execute(
 	// 5. Generate visualization
 	switch vizType {
 	case "image":
-		return u.genHeatmap(profiles, outputType)
+		return u.genHeatmap(profiles, outputType, formula)
 	case "profile":
-		return u.genProfile(profiles, outputType)
+		return u.genProfile(profiles, outputType, formula)
 	default:
 		return nil, fmt.Errorf("unknown visualization type: %s", vizType)
 	}
@@ -141,6 +149,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) extractProfiles(
 func (u *visualizePreparedExperimentUseCaseImpl) genHeatmap(
 	profiles []namedProfile,
 	outputType string,
+	formula string,
 ) (*usecase.VisualizeResult, error) {
 	if len(profiles) == 0 {
 		return nil, fmt.Errorf("no profiles for heatmap")
@@ -176,19 +185,29 @@ func (u *visualizePreparedExperimentUseCaseImpl) genHeatmap(
 		distanceLabels[i] = fmt.Sprintf("%.0f", float64(i)*binWidth)
 	}
 
-	// zData[time][distance]
+	// zData[time][distance] with formula applied
+	var titleSuffix string
 	zData := make([][]float64, nTime)
 	for i, p := range profiles {
 		row := make([]float64, maxBins)
 		copy(row, p.LicelProfile.Data)
+		applyFormula(row, formula, binWidth)
 		zData[i] = row
+	}
+	switch formula {
+	case "rangecorr":
+		titleSuffix = " (P × r²)"
+	case "lograngecorr":
+		titleSuffix = " (ℓоg₁₀(P × r²))"
+	default:
+		titleSuffix = " (raw signal)"
 	}
 
 	switch outputType {
 	case "json":
-		return u.heatmapToPlotly(timeLabels, distanceLabels, zData)
+		return u.heatmapToPlotly(timeLabels, distanceLabels, zData, titleSuffix)
 	default:
-		return u.heatmapToSVG(timeLabels, distanceLabels, zData)
+		return u.heatmapToSVG(timeLabels, distanceLabels, zData, titleSuffix)
 	}
 }
 
@@ -196,6 +215,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) genHeatmap(
 func (u *visualizePreparedExperimentUseCaseImpl) genProfile(
 	profiles []namedProfile,
 	outputType string,
+	formula string,
 ) (*usecase.VisualizeResult, error) {
 	if len(profiles) == 0 {
 		return nil, fmt.Errorf("no profiles to average")
@@ -229,6 +249,19 @@ func (u *visualizePreparedExperimentUseCaseImpl) genProfile(
 		}
 	}
 
+	// Apply formula to averaged data
+	applyFormula(avgData, formula, binWidth)
+
+	var titleSuffix string
+	switch formula {
+	case "rangecorr":
+		titleSuffix = " (P × r²)"
+	case "lograngecorr":
+		titleSuffix = " (ℓог₁₀(P × r²))"
+	default:
+		titleSuffix = " (raw signal)"
+	}
+
 	// Build distance axis
 	distance := make([]float64, maxLen)
 	for i := 0; i < maxLen; i++ {
@@ -237,9 +270,9 @@ func (u *visualizePreparedExperimentUseCaseImpl) genProfile(
 
 	switch outputType {
 	case "json":
-		return u.profileToPlotly(distance, avgData)
+		return u.profileToPlotly(distance, avgData, titleSuffix)
 	default:
-		return u.profileToSVG(distance, avgData)
+		return u.profileToSVG(distance, avgData, titleSuffix)
 	}
 }
 
@@ -255,6 +288,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToSVG(
 	timeLabels []string,
 	distanceLabels []string,
 	zData [][]float64,
+	titleSuffix string,
 ) (*usecase.VisualizeResult, error) {
 	width, height := 900, 650
 	marginLeft, marginRight, marginTop, marginBottom := 70.0, 55.0, 40.0, 80.0
@@ -304,8 +338,8 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToSVG(
 
 	// Title
 	sb.WriteString(fmt.Sprintf(
-		`<text x="%d" y="%d" text-anchor="middle" font-size="16" font-family="sans-serif">Lidar Heatmap</text>`,
-		width/2, 25,
+		`<text x="%d" y="%d" text-anchor="middle" font-size="16" font-family="sans-serif">Lidar Heatmap%s</text>`,
+		width/2, 25, titleSuffix,
 	))
 
 	// Draw cells → Y = distance (row d), flipped: d=0 at bottom, d=nDist-1 at top
@@ -407,6 +441,26 @@ func minInt(a, b int) int {
 	return b
 }
 
+// applyFormula transforms profile data in-place according to the formula:
+// "raw" — P (no change), "rangecorr" — P × r², "lograngecorr" — log₁₀(P × r²).
+func applyFormula(data []float64, formula string, binWidth float64) {
+	switch formula {
+	case "rangecorr":
+		for i, v := range data {
+			r := float64(i) * binWidth / 1000.0
+			data[i] = v * r * r
+		}
+	case "lograngecorr":
+		for i, v := range data {
+			r := float64(i) * binWidth / 1000.0
+			val := v * r * r
+			if val > 0 {
+				data[i] = math.Log10(val)
+			}
+		}
+	}
+}
+
 // heatmapColor returns RGB for a value in [0, 1] using a blue-to-red ramp.
 func heatmapColor(t float64) (r, g, b int) {
 	if t < 0 {
@@ -434,6 +488,7 @@ func heatmapColor(t float64) (r, g, b int) {
 func (u *visualizePreparedExperimentUseCaseImpl) profileToSVG(
 	distance []float64,
 	data []float64,
+	titleSuffix string,
 ) (*usecase.VisualizeResult, error) {
 	width, height := 800, 500
 	marginLeft, marginRight, marginTop, marginBottom := 70.0, 30.0, 40.0, 60.0
@@ -472,8 +527,8 @@ func (u *visualizePreparedExperimentUseCaseImpl) profileToSVG(
 
 	// Title
 	sb.WriteString(fmt.Sprintf(
-		`<text x="%d" y="%d" text-anchor="middle" font-size="16" font-family="sans-serif">Averaged Profile</text>`,
-		width/2, 25,
+		`<text x="%d" y="%d" text-anchor="middle" font-size="16" font-family="sans-serif">Averaged Profile%s</text>`,
+		width/2, 25, titleSuffix,
 	))
 
 	// Axis lines
@@ -592,6 +647,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPlotly(
 	timeLabels []string,
 	distanceLabels []string,
 	zData [][]float64,
+	titleSuffix string,
 ) (*usecase.VisualizeResult, error) {
 	// zData is [time][distance], transpose to [distance][time] for Plotly heatmap (Y=dist, X=time)
 	nTime := len(zData)
@@ -619,7 +675,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPlotly(
 			},
 		},
 		Layout: plotlyLayout{
-			Title:  "Lidar Heatmap",
+			Title:  "Lidar Heatmap" + titleSuffix,
 			XAxis:  plotlyAxis{Title: "Time, HH:MM"},
 			YAxis:  plotlyAxis{Title: "Distance, m"},
 			Margin: plotlyMargin{L: 70, R: 30, T: 50, B: 80},
@@ -640,6 +696,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPlotly(
 func (u *visualizePreparedExperimentUseCaseImpl) profileToPlotly(
 	distance []float64,
 	data []float64,
+	titleSuffix string,
 ) (*usecase.VisualizeResult, error) {
 	resp := plotlyResponse{
 		Data: []plotlyTrace{
@@ -654,7 +711,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) profileToPlotly(
 			},
 		},
 		Layout: plotlyLayout{
-			Title:  "Averaged Profile",
+			Title:  "Averaged Profile" + titleSuffix,
 			XAxis:  plotlyAxis{Title: "Distance, m"},
 			YAxis:  plotlyAxis{Title: "Intensity"},
 			Margin: plotlyMargin{L: 70, R: 30, T: 50, B: 60},

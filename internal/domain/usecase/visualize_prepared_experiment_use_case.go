@@ -17,5 +17,6 @@ type VisualizePreparedExperimentUseCase interface {
 		polarization string,
 		vizType string, // "image" or "profile"
 		outputType string, // "svg" or "json"
+		formula string, // "raw", "rangecorr", "lograngecorr"
 	) (*VisualizeResult, error)
 }

@@ -10,8 +10,9 @@ All notable changes to this project will be documented in this file.
   - `:action` = `image` → heatmap (X=время HH:MM, Y=дистанция м, цвет=интенсивность).
   - `:action` = `profile` → усреднённый XY-профиль (X=дистанция, Y=интенсивность).
   - Query-параметр `?type=` → `svg` (по умолчанию, `Content-Type: image/svg+xml`) или `json` (Plotly-совместимый JSON).
+  - Query-параметр `?formula=` → `raw` (сырой сигнал P, по умолчанию), `rangecorr` (P × r²), `lograngecorr` (log₁₀(P × r²)).
   - Доступ: **admin, manager**.
-  - Внутренняя логика: скачивание подготовленного zip из Minio, парсинг `LicelPack`, фильтрация профилей по `(isPhoton, wavelength, polarization)`, генерация SVG/JSON.
+  - Внутренняя логика: скачивание подготовленного zip из Minio, парсинг `LicelPack`, фильтрация профилей по `(isPhoton, wavelength, polarization)`, трансформация сигнала, генерация SVG/JSON.
   - SVG: встроенная генерация без внешних зависимостей. Heatmap с цветовой шкалой blue→cyan→green→yellow→red. Profile с полигональной линией и сеткой.
   - Plotly JSON: heatmap-трейс с `colorscale: Jet` или scatter-трейс `mode: lines` с hover-подсказками.
 

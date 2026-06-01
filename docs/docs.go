@@ -372,6 +372,120 @@ const docTemplate = `{
                 }
             }
         },
+        "/prepared/{id}/{wavelen}/{photon}/{polarization}/{action}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generates a heatmap or averaged profile from prepared experiment data. Returns SVG or Plotly JSON.",
+                "produces": [
+                    "*/*"
+                ],
+                "tags": [
+                    "experiments"
+                ],
+                "summary": "Visualize prepared experiment data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Prepared experiment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "format": "float64",
+                        "description": "Wavelength",
+                        "name": "wavelen",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Photon channel",
+                        "name": "photon",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Polarization",
+                        "name": "polarization",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "image",
+                            "profile"
+                        ],
+                        "type": "string",
+                        "description": "image or profile",
+                        "name": "action",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "svg",
+                            "json"
+                        ],
+                        "type": "string",
+                        "default": "svg",
+                        "description": "Output type: svg or json",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "raw",
+                            "rangecorr",
+                            "lograngecorr"
+                        ],
+                        "type": "string",
+                        "default": "raw",
+                        "description": "Signal formula: raw, rangecorr, lograngecorr",
+                        "name": "formula",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SVG image or Plotly JSON",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "security": [
