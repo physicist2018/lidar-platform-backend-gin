@@ -296,6 +296,82 @@ const docTemplate = `{
                 }
             }
         },
+        "/experiments/{id}/prepare": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Starts background processing: background subtraction and cropping. Stores result in Minio.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "experiments"
+                ],
+                "summary": "Prepare experiment data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Experiment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Preparation parameters",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.PrepareExperimentBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.PreparedExperimentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Experiment not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Experiment not ready",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "security": [
@@ -758,6 +834,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -785,6 +864,63 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                }
+            }
+        },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.PrepareExperimentBody": {
+            "type": "object",
+            "required": [
+                "bgr_type",
+                "crop_alt"
+            ],
+            "properties": {
+                "bgr_alt": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "bgr_type": {
+                    "type": "string",
+                    "enum": [
+                        "file",
+                        "avgTail",
+                        "medTail"
+                    ]
+                },
+                "crop_alt": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.PreparedExperimentResponse": {
+            "type": "object",
+            "properties": {
+                "bgr_alt": {
+                    "type": "number"
+                },
+                "bgr_type": {
+                    "type": "string"
+                },
+                "crop_alt": {
+                    "type": "number"
+                },
+                "error_msg": {
+                    "type": "string"
+                },
+                "experiment_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "path_to_data": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

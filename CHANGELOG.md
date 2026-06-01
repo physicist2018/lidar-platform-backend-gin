@@ -16,6 +16,10 @@ All notable changes to this project will be documented in this file.
 - **create_experiment_use_case_impl.go** — сигнатура `Execute()` теперь принимает `userID uint`.
 - **prepare_experiment_use_case_impl.go** — сигнатура `Execute()` теперь принимает `userID uint`.
 
+### Fixed
+
+- **AutoMigrate с существующими строками** — колонка `user_id` в `experiments` и `prepared_experiments` теперь имеет `DEFAULT 1`, чтобы существующие строки не ломали `NOT NULL` constraint при миграции.
+
 ## [0.2.3] — 2026-06-01
 
 ### Added
