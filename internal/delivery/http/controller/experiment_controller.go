@@ -19,11 +19,12 @@ import (
 var ErrTitleRequired = errors.New("title is required")
 
 type ExperimentController struct {
-	Log                 *logrus.Logger
-	CreateExperimentUC  usecase.CreateExperimentUseCase
-	GetExperimentByIDUC usecase.GetExperimentByIDUseCase
-	GetAllExperimentsUC usecase.GetAllExperimentsUseCase
-	PrepareExperimentUC usecase.PrepareExperimentUseCase
+	Log                           *logrus.Logger
+	CreateExperimentUC            usecase.CreateExperimentUseCase
+	GetExperimentByIDUC           usecase.GetExperimentByIDUseCase
+	GetAllExperimentsUC           usecase.GetAllExperimentsUseCase
+	PrepareExperimentUC           usecase.PrepareExperimentUseCase
+	VisualizePreparedExperimentUC usecase.VisualizePreparedExperimentUseCase
 }
 
 func NewExperimentController(
@@ -32,13 +33,15 @@ func NewExperimentController(
 	getByID usecase.GetExperimentByIDUseCase,
 	getAll usecase.GetAllExperimentsUseCase,
 	prepare usecase.PrepareExperimentUseCase,
+	visualize usecase.VisualizePreparedExperimentUseCase,
 ) *ExperimentController {
 	return &ExperimentController{
-		Log:                 log,
-		CreateExperimentUC:  create,
-		GetExperimentByIDUC: getByID,
-		GetAllExperimentsUC: getAll,
-		PrepareExperimentUC: prepare,
+		Log:                           log,
+		CreateExperimentUC:            create,
+		GetExperimentByIDUC:           getByID,
+		GetAllExperimentsUC:           getAll,
+		PrepareExperimentUC:           prepare,
+		VisualizePreparedExperimentUC: visualize,
 	}
 }
 
@@ -222,4 +225,54 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, mapper.ToPreparedExperimentResponse(prep))
+}
+
+// Visualize godoc
+//
+//	@Summary		Visualize prepared experiment data
+//	@Description	Generates a heatmap or averaged profile from prepared experiment data. Returns SVG or Plotly JSON.
+//	@Tags			experiments
+//	@Produce		json
+//	@Produce		svg
+//	@Security		BearerAuth
+//	@Param			id			path		uint	true	"Prepared experiment ID"
+//	@Param			wavelen		path		float64	true	"Wavelength"
+//	@Param			photon		path		bool	true	"Photon channel"
+//	@Param			polarization	path		string	true	"Polarization"
+//	@Param			action		path		string	true	"image or profile"	Enums(image, profile)
+//	@Param			type		query		string	false	"Output type: svg or json"	Enums(svg, json)	default(svg)
+//	@Success		200			{string}	string	"SVG or JSON"
+//	@Failure		400			{object}	dto.ErrorResponse	"Bad request"
+//	@Failure		401			{object}	dto.ErrorResponse	"Unauthorized"
+//	@Failure		404			{object}	dto.ErrorResponse	"Not found"
+//	@Failure		500			{object}	dto.ErrorResponse	"Internal server error"
+//	@Router			/prepared/{id}/{wavelen}/{photon}/{polarization}/{action} [get]
+func (ctrl *ExperimentController) Visualize(c *gin.Context) {
+	var uri dto.VisualizePreparedExperimentURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		c.Error(err)
+		return
+	}
+
+	var query dto.VisualizeTypeQuery
+	_ = c.ShouldBindQuery(&query)
+	if query.Type == "" {
+		query.Type = "svg"
+	}
+
+	result, err := ctrl.VisualizePreparedExperimentUC.Execute(
+		c.Request.Context(),
+		uri.ID,
+		uri.Wavelen,
+		uri.Photon,
+		uri.Polarization,
+		uri.Action,
+		query.Type,
+	)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.Data(http.StatusOK, result.ContentType, result.Body)
 }

@@ -87,5 +87,12 @@ func (rc *RouteConfig) SetupExperimentRoutes(rg *gin.RouterGroup) {
 		{
 			adminManager.POST("/:id/prepare", rc.ExperimentController.Prepare)
 		}
+
+		// Prepared experiment visualization (admin+manager)
+		prepRoutes := rg.Group("/prepared")
+		prepRoutes.Use(middleware.AdminOrManager())
+		{
+			prepRoutes.GET("/:id/:wavelen/:photon/:polarization/:action", rc.ExperimentController.Visualize)
+		}
 	}
 }

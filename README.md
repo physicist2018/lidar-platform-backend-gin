@@ -81,6 +81,14 @@ go run ./cmd/app
 | `POST` | `/experiments` | **admin** | Создать (multipart: `title`, `licelZip`, `licelBgr`, `meteoFile`) |
 | `POST` | `/experiments/:id/prepare` | **admin, manager** | Подготовка данных (JSON: `crop_alt`, `bgr_type`, `bgr_alt`) |
 
+### Prepared Experiments (требуется аутентификация)
+
+| Метод | Путь | Роль | Описание |
+|---|---|---|---|
+| `GET` | `/prepared/:id/:wavelen/:photon/:polarization/:action` | **admin, manager** | Визуализация: heatmap или профиль (`?type=svg|json`) |
+
+> **GET /prepared/:id/:wavelen/:photon/:polarization/:action** — `:action` = `image` (heatmap: X=время, Y=дистанция) или `profile` (усреднённый XY-график). `:wavelen` — длина волны (например `532`), `:photon` — `true` (фотонный) или `false` (аналоговый). Параметр `type=svg` (по умолчанию) возвращает SVG-изображение, `type=json` — Plotly-совместимый JSON.
+
 > **POST /experiments** — возвращает `201` сразу со статусом `staged`. Препроцессинг (парсинг licel zip, загрузка в Minio) выполняется асинхронно в worker pool. Статус обновляется: `staged → uploading → done|failed`.
 
 > **POST /experiments/:id/prepare** — асинхронный пайплайн: вычитание фона (`file`/`avgTail`/`medTail`) → обрезка по высоте → загрузка в Minio (`experiments/{id}/processed/dats.zip`). Статус: `staged → removebgr → cropping → done|failed`.

@@ -102,8 +102,9 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	prepDataSource := dsImpl.NewPreparedExperimentDataSourceImpl(dbConn, log)
 	prepRepo := repoImpl.NewPreparedExperimentRepositoryImpl(prepDataSource, log)
 	prepareExpUC := usecaseImpl.NewPrepareExperimentUseCaseImpl(expRepo, prepRepo, minioClient, workerPool, log)
+	visualizePrepUC := usecaseImpl.NewVisualizePreparedExperimentUseCaseImpl(prepRepo, minioClient, log)
 
-	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, prepareExpUC)
+	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, prepareExpUC, visualizePrepUC)
 
 	route.NewRouteConfig(ginEngine, cfg.JWTSecret, userController, authController, expController).Setup()
 
