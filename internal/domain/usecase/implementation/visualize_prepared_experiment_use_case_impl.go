@@ -16,6 +16,9 @@ import (
 	"github.com/fogleman/gg"
 	"github.com/physicist2018/licelfile/v2/licelformat"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/gofont/goregular"
+	"golang.org/x/image/font/opentype"
 
 	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
 	"github.com/kshmirko/lidar-platform-go/internal/domain/repository"
@@ -704,14 +707,13 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPNG(
 	dc.SetRGB(1, 1, 1)
 	dc.Clear()
 
-	// Title
-	dc.SetRGB(0, 0, 0)
-	if loadErr := dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 16); loadErr != nil {
-		// fallback: try common Linux font
-		if loadErr := dc.LoadFontFace("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16); loadErr != nil {
-			return nil, fmt.Errorf("load font: %w", loadErr)
-		}
+	// Load embedded Go font (no filesystem dependency)
+	titleFont, err := loadFont(16)
+	if err != nil {
+		return nil, fmt.Errorf("load font: %w", err)
 	}
+	dc.SetRGB(0, 0, 0)
+	dc.SetFontFace(titleFont)
 	dc.DrawStringAnchored("Lidar Heatmap"+titleSuffix, float64(width/2), 25, 0.5, 0.5)
 
 	// Draw cells — flipped Y: d=0 at bottom
@@ -748,10 +750,9 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPNG(
 	dc.DrawLine(marginLeft, marginTop+plotH, marginLeft+plotW, marginTop+plotH)
 	dc.Stroke()
 
-	// Set font for labels
-	_ = dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 10)
-
 	// Y-axis (distance) labels
+	labelFont, _ := loadFont(10)
+	dc.SetFontFace(labelFont)
 	numYLabels := 8
 	for k := 0; k <= numYLabels; k++ {
 		idx := int(float64(k) / float64(numYLabels) * float64(nDist-1))
@@ -763,8 +764,9 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPNG(
 	}
 
 	// X-axis (time) labels
+	smallFont, _ := loadFont(9)
+	dc.SetFontFace(smallFont)
 	numXLabels := minInt(10, nTime-1)
-	dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 9)
 	for k := 0; k <= numXLabels; k++ {
 		idx := int(float64(k) / float64(numXLabels) * float64(nTime-1))
 		if idx >= nTime {
@@ -775,7 +777,8 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPNG(
 	}
 
 	// Axis titles
-	dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 12)
+	axisFont, _ := loadFont(12)
+	dc.SetFontFace(axisFont)
 	dc.Push()
 	dc.Translate(15, marginTop+plotH/2)
 	dc.Rotate(-math.Pi / 2)
@@ -799,9 +802,10 @@ func (u *visualizePreparedExperimentUseCaseImpl) heatmapToPNG(
 	dc.Stroke()
 
 	// Colorbar ticks (≥5 evenly spaced)
+	tickFont, _ := loadFont(10)
+	dc.SetFontFace(tickFont)
 	numTicks := 5
 	tickLen := 6.0
-	dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 10)
 	for k := 0; k <= numTicks; k++ {
 		frac := 1.0 - float64(k)/float64(numTicks)
 		tickY := barY + frac*barH
@@ -862,15 +866,15 @@ func (u *visualizePreparedExperimentUseCaseImpl) profileToPNG(
 	dc.SetRGB(1, 1, 1)
 	dc.Clear()
 
-	// Load font
-	if err := dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 12); err != nil {
-		if err := dc.LoadFontFace("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 12); err != nil {
-			return nil, fmt.Errorf("load font: %w", err)
-		}
+	// Load embedded Go font (no filesystem dependency)
+	mainFont, err := loadFont(12)
+	if err != nil {
+		return nil, fmt.Errorf("load font: %w", err)
 	}
 
 	// Title
 	dc.SetRGB(0, 0, 0)
+	dc.SetFontFace(mainFont)
 	dc.DrawStringAnchored("Averaged Profile"+titleSuffix, float64(width/2), 25, 0.5, 0.5)
 
 	// Axis lines
@@ -898,7 +902,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) profileToPNG(
 	dc.Stroke()
 
 	// X-axis labels
-	dc.LoadFontFace("/System/Library/Fonts/Helvetica.ttc", 10)
+	dc.SetFontFace(mainFont)
 	numXLabels := 6
 	for k := 0; k <= numXLabels; k++ {
 		idx := int(float64(k) / float64(numXLabels) * float64(n-1))
@@ -962,6 +966,19 @@ func drawDashedLineV(dc *gg.Context, x, y1, y2, dashLen, gapLen float64) {
 		dc.DrawLine(x, y, x, endY)
 		dc.Stroke()
 	}
+}
+
+// loadFont loads the embedded Go font at the given size (no filesystem dependency).
+func loadFont(size float64) (font.Face, error) {
+	parsed, err := opentype.Parse(goregular.TTF)
+	if err != nil {
+		return nil, fmt.Errorf("parse embedded font: %w", err)
+	}
+	face, err := opentype.NewFace(parsed, &opentype.FaceOptions{Size: size, DPI: 72})
+	if err != nil {
+		return nil, fmt.Errorf("create font face: %w", err)
+	}
+	return face, nil
 }
 
 // ========================= Plotly JSON generation =========================
