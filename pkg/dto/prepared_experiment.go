@@ -8,6 +8,7 @@ type PrepareExperimentBody struct {
 
 type PreparedExperimentResponse struct {
 	ID           uint    `json:"id"`
+	UserID       uint    `json:"user_id"`
 	ExperimentID uint    `json:"experiment_id"`
 	CropAlt      float64 `json:"crop_alt"`
 	BGRType      string  `json:"bgr_type"`

@@ -79,7 +79,13 @@ func (rc *RouteConfig) SetupExperimentRoutes(rg *gin.RouterGroup) {
 		admin.Use(middleware.AdminOnly())
 		{
 			admin.POST("", rc.ExperimentController.Create)
-			admin.POST("/:id/prepare", rc.ExperimentController.Prepare)
+		}
+
+		// Admin+Manager routes
+		adminManager := expRoutes.Group("")
+		adminManager.Use(middleware.AdminOrManager())
+		{
+			adminManager.POST("/:id/prepare", rc.ExperimentController.Prepare)
 		}
 	}
 }

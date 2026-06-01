@@ -54,6 +54,30 @@ func AdminOnly() gin.HandlerFunc {
 	}
 }
 
+// AdminOrManager allows both admin and manager roles.
+func AdminOrManager() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		claims, exists := c.Get(ClaimsKey)
+		if !exists {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "access denied"})
+			return
+		}
+
+		userClaims, ok := claims.(*auth.Claims)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "access denied"})
+			return
+		}
+
+		if userClaims.Role != "admin" && userClaims.Role != "manager" {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "admin or manager role required"})
+			return
+		}
+
+		c.Next()
+	}
+}
+
 func GetClaims(c *gin.Context) *auth.Claims {
 	claims, exists := c.Get(ClaimsKey)
 	if !exists {

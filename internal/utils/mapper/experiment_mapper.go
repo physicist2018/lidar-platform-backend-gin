@@ -9,6 +9,7 @@ import (
 func ToExperimentResponse(exp *entity.Experiment) *dto.ExperimentResponse {
 	return &dto.ExperimentResponse{
 		ID:                   exp.ID,
+		UserID:               exp.UserID,
 		Title:                exp.Title,
 		Comments:             exp.Comments,
 		MeasurementStartTime: exp.MeasurementStartTime,

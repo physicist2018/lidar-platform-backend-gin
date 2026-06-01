@@ -44,6 +44,7 @@ func NewCreateExperimentUseCaseImpl(
 
 func (u *createExperimentUseCaseImpl) Execute(
 	ctx context.Context,
+	userID uint,
 	title, comments string,
 	licelZip, licelBgr, meteoFile *multipart.FileHeader,
 ) (*entity.Experiment, error) {
@@ -72,6 +73,7 @@ func (u *createExperimentUseCaseImpl) Execute(
 
 	// 2. Create Experiment with status "staged"
 	exp := &entity.Experiment{
+		UserID:   userID,
 		Title:    title,
 		Comments: comments,
 		Status:   entity.StatusStaged,
@@ -130,14 +132,6 @@ func (u *createExperimentUseCaseImpl) preprocess(expID uint, tempDir, zipPath, b
 	var minStart, maxStop time.Time
 	minStart = pack.StartTime
 	maxStop = pack.StopTime
-	// for _, lf := range pack.Data {
-	// 	if minStart.IsZero() || lf.MeasurementStartTime.Before(minStart) {
-	// 		minStart = lf.MeasurementStartTime
-	// 	}
-	// 	if lf.MeasurementStopTime.After(maxStop) {
-	// 		maxStop = lf.MeasurementStopTime
-	// 	}
-	// }
 
 	// 3. Upload files to Minio
 	basePath := fmt.Sprintf("experiments/%d/source", expID)

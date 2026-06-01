@@ -8,6 +8,7 @@ import (
 
 type ExperimentEntity struct {
 	ID                   uint       `gorm:"primaryKey"`
+	UserID               uint       `gorm:"not null;index"`
 	Title                string     `gorm:"size:255;not null"`
 	Comments             string     `gorm:"type:text"`
 	MeasurementStartTime *time.Time `gorm:"default:null"`

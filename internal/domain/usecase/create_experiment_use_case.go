@@ -8,5 +8,5 @@ import (
 )
 
 type CreateExperimentUseCase interface {
-	Execute(ctx context.Context, title, comments string, licelZip, licelBgr, meteoFile *multipart.FileHeader) (*entity.Experiment, error)
+	Execute(ctx context.Context, userID uint, title, comments string, licelZip, licelBgr, meteoFile *multipart.FileHeader) (*entity.Experiment, error)
 }

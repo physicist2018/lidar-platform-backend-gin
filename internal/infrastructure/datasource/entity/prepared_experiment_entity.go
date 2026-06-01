@@ -8,6 +8,7 @@ import (
 
 type PreparedExperimentEntity struct {
 	ID           uint    `gorm:"primaryKey"`
+	UserID       uint    `gorm:"not null;index"`
 	ExperimentID uint    `gorm:"not null;index"`
 	CropAlt      float64 `gorm:"not null"`
 	BGRType      string  `gorm:"size:20;not null"`

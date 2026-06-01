@@ -46,7 +46,7 @@ func NewPrepareExperimentUseCaseImpl(
 
 func (u *prepareExperimentUseCaseImpl) Execute(
 	ctx context.Context,
-	experimentID uint,
+	userID, experimentID uint,
 	cropAlt float64,
 	bgrType entity.BGRType,
 	bgrAlt float64,
@@ -65,6 +65,7 @@ func (u *prepareExperimentUseCaseImpl) Execute(
 	pathToData := fmt.Sprintf("experiments/%d/processed/dats.zip", experimentID)
 
 	prep := &entity.PreparedExperiment{
+		UserID:       userID,
 		ExperimentID: experimentID,
 		CropAlt:      cropAlt,
 		BGRType:      bgrType,

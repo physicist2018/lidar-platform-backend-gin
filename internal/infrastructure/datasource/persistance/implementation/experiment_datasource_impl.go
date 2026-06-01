@@ -26,6 +26,7 @@ func NewExperimentDataSourceImpl(db *gorm.DB, log *logrus.Logger) *ExperimentDat
 
 func (d *ExperimentDataSourceImpl) Create(ctx context.Context, exp *entity.Experiment) error {
 	dbExp := &dbEntity.ExperimentEntity{
+		UserID:   exp.UserID,
 		Title:    exp.Title,
 		Comments: exp.Comments,
 		Status:   string(exp.Status),
@@ -44,6 +45,10 @@ func (d *ExperimentDataSourceImpl) Update(ctx context.Context, exp *entity.Exper
 	updates := map[string]interface{}{
 		"title":  exp.Title,
 		"status": string(exp.Status),
+	}
+
+	if exp.UserID != 0 {
+		updates["user_id"] = exp.UserID
 	}
 
 	if exp.Comments != "" {
@@ -130,6 +135,7 @@ func (d *ExperimentDataSourceImpl) GetAll(ctx context.Context, filter *entity.Ex
 func toExperimentDomain(dbExp *dbEntity.ExperimentEntity) entity.Experiment {
 	return entity.Experiment{
 		ID:                   dbExp.ID,
+		UserID:               dbExp.UserID,
 		Title:                dbExp.Title,
 		Comments:             dbExp.Comments,
 		MeasurementStartTime: dbExp.MeasurementStartTime,

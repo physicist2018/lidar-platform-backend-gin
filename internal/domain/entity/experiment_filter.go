@@ -6,4 +6,5 @@ type ExperimentFilter struct {
 	Sort   string
 	Status ExperimentStatus
 	Title  string
+	UserID uint
 }

@@ -44,6 +44,7 @@ func (t BGRType) IsValid() bool {
 
 type PreparedExperiment struct {
 	ID           uint                     `json:"id"`
+	UserID       uint                     `json:"user_id"`
 	ExperimentID uint                     `json:"experiment_id"`
 	CropAlt      float64                  `json:"crop_alt"`
 	BGRType      BGRType                  `json:"bgr_type"`

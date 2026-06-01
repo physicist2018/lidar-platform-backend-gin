@@ -25,6 +25,7 @@ func NewPreparedExperimentDataSourceImpl(db *gorm.DB, log *logrus.Logger) *Prepa
 
 func (d *PreparedExperimentDataSourceImpl) Create(ctx context.Context, exp *entity.PreparedExperiment) error {
 	dbExp := &dbEntity.PreparedExperimentEntity{
+		UserID:       exp.UserID,
 		ExperimentID: exp.ExperimentID,
 		CropAlt:      exp.CropAlt,
 		BGRType:      string(exp.BGRType),
@@ -42,6 +43,10 @@ func (d *PreparedExperimentDataSourceImpl) Create(ctx context.Context, exp *enti
 
 func (d *PreparedExperimentDataSourceImpl) Update(ctx context.Context, exp *entity.PreparedExperiment) error {
 	updates := map[string]interface{}{}
+
+	if exp.UserID != 0 {
+		updates["user_id"] = exp.UserID
+	}
 
 	if exp.CropAlt != 0 {
 		updates["crop_alt"] = exp.CropAlt
@@ -94,6 +99,7 @@ func (d *PreparedExperimentDataSourceImpl) GetByExperimentID(ctx context.Context
 func toPreparedExperimentDomain(dbExp *dbEntity.PreparedExperimentEntity) entity.PreparedExperiment {
 	return entity.PreparedExperiment{
 		ID:           dbExp.ID,
+		UserID:       dbExp.UserID,
 		ExperimentID: dbExp.ExperimentID,
 		CropAlt:      dbExp.CropAlt,
 		BGRType:      entity.BGRType(dbExp.BGRType),

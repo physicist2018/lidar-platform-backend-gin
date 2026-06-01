@@ -7,5 +7,5 @@ import (
 )
 
 type PrepareExperimentUseCase interface {
-	Execute(ctx context.Context, experimentID uint, cropAlt float64, bgrType entity.BGRType, bgrAlt float64) (*entity.PreparedExperiment, error)
+	Execute(ctx context.Context, userID, experimentID uint, cropAlt float64, bgrType entity.BGRType, bgrAlt float64) (*entity.PreparedExperiment, error)
 }

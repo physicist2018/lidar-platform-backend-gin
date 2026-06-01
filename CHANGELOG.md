@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] — 2026-06-01
+
+### Added
+
+- **UserID в Experiment и PreparedExperiment** — идентификация автора.
+  - Поле `user_id` добавлено в `Experiment` и `PreparedExperiment` на всех слоях (entity, DB, DTO, mapper).
+  - `POST /experiments` и `POST /experiments/{id}/prepare` теперь сохраняют `userID` из JWT claims.
+- **AdminOrManager middleware** — роут `POST /experiments/{id}/prepare` теперь доступен админам и менеджерам.
+
+### Changed
+
+- **create_experiment_use_case_impl.go** — сигнатура `Execute()` теперь принимает `userID uint`.
+- **prepare_experiment_use_case_impl.go** — сигнатура `Execute()` теперь принимает `userID uint`.
+
 ## [0.2.3] — 2026-06-01
 
 ### Added

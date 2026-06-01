@@ -27,6 +27,7 @@ func (s ExperimentStatus) IsValid() bool {
 
 type Experiment struct {
 	ID                   uint             `json:"id"`
+	UserID               uint             `json:"user_id"`
 	Title                string           `json:"title"`
 	Comments             string           `json:"comments"`
 	MeasurementStartTime *time.Time       `json:"measurement_start_time,omitempty"`

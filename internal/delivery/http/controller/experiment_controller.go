@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
+	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/middleware"
 	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
 	"github.com/kshmirko/lidar-platform-go/internal/domain/usecase"
 	"github.com/kshmirko/lidar-platform-go/internal/utils/mapper"
@@ -60,6 +61,8 @@ func NewExperimentController(
 //	@Failure		500	{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/experiments [post]
 func (ctrl *ExperimentController) Create(c *gin.Context) {
+	claims := middleware.GetClaims(c)
+
 	title := c.PostForm("title")
 	if title == "" {
 		c.Error(ErrTitleRequired)
@@ -83,7 +86,7 @@ func (ctrl *ExperimentController) Create(c *gin.Context) {
 		return
 	}
 
-	exp, err := ctrl.CreateExperimentUC.Execute(c.Request.Context(), title, comments, licelZip, licelBgr, meteoFile)
+	exp, err := ctrl.CreateExperimentUC.Execute(c.Request.Context(), claims.UserID, title, comments, licelZip, licelBgr, meteoFile)
 	if err != nil {
 		c.Error(err)
 		return
@@ -190,6 +193,8 @@ func (ctrl *ExperimentController) GetAll(c *gin.Context) {
 //	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/experiments/{id}/prepare [post]
 func (ctrl *ExperimentController) Prepare(c *gin.Context) {
+	claims := middleware.GetClaims(c)
+
 	idStr := c.Param("id")
 	experimentID, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
@@ -205,6 +210,7 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 
 	prep, err := ctrl.PrepareExperimentUC.Execute(
 		c.Request.Context(),
+		claims.UserID,
 		uint(experimentID),
 		body.CropAlt,
 		entity.BGRType(body.BGRType),

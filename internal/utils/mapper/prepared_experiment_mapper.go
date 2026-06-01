@@ -8,6 +8,7 @@ import (
 func ToPreparedExperimentResponse(exp *entity.PreparedExperiment) *dto.PreparedExperimentResponse {
 	return &dto.PreparedExperimentResponse{
 		ID:           exp.ID,
+		UserID:       exp.UserID,
 		ExperimentID: exp.ExperimentID,
 		CropAlt:      exp.CropAlt,
 		BGRType:      string(exp.BGRType),
