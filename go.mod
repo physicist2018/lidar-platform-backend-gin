@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/minio/minio-go/v7 v7.2.0
-	github.com/physicist2018/licelfile/v2 v2.1.4
+	github.com/physicist2018/licelfile/v2 v2.1.5
 	github.com/redis/go-redis/extra/redisotel/v9 v9.20.0
 	github.com/redis/go-redis/v9 v9.20.0
 	github.com/sirupsen/logrus v1.9.4

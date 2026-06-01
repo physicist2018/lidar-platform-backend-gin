@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.3] — 2026-06-01
+
+### Added
+
+- **POST /experiments/{id}/prepare** — подготовка данных эксперимента: вычитание фона и обрезка по высоте.
+  - Новый домен `PreparedExperiment` (ID, ExperimentID, CropAlt, BGRType, BGRAlt, PathToData, Status).
+  - Статусная машина: `staged → removebgr → cropping → done | failed`.
+  - Три стратегии вычитания фона: `file` (поэлементное вычитание из BGR-файла), `avgTail` (среднее), `medTail` (медиана).
+  - Обрезка по `cropAlt` через `LicelPack.SetMaxDist`. Результат сохраняется в Minio: `experiments/{id}/processed/dats.zip`.
+  - Воркерный пул: скачивает данные из Minio, обрабатывает, выгружает обратно.
+- **Minio.DownloadFile** — загрузка объектов из Minio на диск.
+- **PreparedExperiment DB entity** — GORM-сущность `prepared_experiments` с внешним ключом на `experiments`.
+- **PreparedExperiment domain** — полный Clean Architecture стек (entity, datasource, repository, usecase, controller, route, DTO, mapper).
+
 ## [0.2.2] — 2026-05-31
 
 ### Changed

@@ -23,6 +23,7 @@ func main() {
 	if err := dbConn.AutoMigrate(
 		&dbEntity.UserEntity{},
 		&dbEntity.ExperimentEntity{},
+		&dbEntity.PreparedExperimentEntity{},
 	); err != nil {
 		log.Fatalf("auto-migration failed: %v", err)
 	}

@@ -2,7 +2,9 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -20,6 +22,7 @@ type ExperimentController struct {
 	CreateExperimentUC  usecase.CreateExperimentUseCase
 	GetExperimentByIDUC usecase.GetExperimentByIDUseCase
 	GetAllExperimentsUC usecase.GetAllExperimentsUseCase
+	PrepareExperimentUC usecase.PrepareExperimentUseCase
 }
 
 func NewExperimentController(
@@ -27,12 +30,14 @@ func NewExperimentController(
 	create usecase.CreateExperimentUseCase,
 	getByID usecase.GetExperimentByIDUseCase,
 	getAll usecase.GetAllExperimentsUseCase,
+	prepare usecase.PrepareExperimentUseCase,
 ) *ExperimentController {
 	return &ExperimentController{
 		Log:                 log,
 		CreateExperimentUC:  create,
 		GetExperimentByIDUC: getByID,
 		GetAllExperimentsUC: getAll,
+		PrepareExperimentUC: prepare,
 	}
 }
 
@@ -165,4 +170,50 @@ func (ctrl *ExperimentController) GetAll(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, mapper.ToExperimentResponseList(result))
+}
+
+// Prepare godoc
+//
+//	@Summary		Prepare experiment data
+//	@Description	Starts background processing: background subtraction and cropping. Stores result in Minio.
+//	@Tags			experiments
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		uint	true	"Experiment ID"
+//	@Param			body	body		dto.PrepareExperimentBody	true	"Preparation parameters"
+//	@Success		201		{object}	dto.PreparedExperimentResponse
+//	@Failure		400		{object}	dto.ErrorResponse	"Bad request"
+//	@Failure		401		{object}	dto.ErrorResponse	"Unauthorized"
+//	@Failure		404		{object}	dto.ErrorResponse	"Experiment not found"
+//	@Failure		409		{object}	dto.ErrorResponse	"Experiment not ready"
+//	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
+//	@Router			/experiments/{id}/prepare [post]
+func (ctrl *ExperimentController) Prepare(c *gin.Context) {
+	idStr := c.Param("id")
+	experimentID, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.Error(fmt.Errorf("invalid experiment id: %s", idStr))
+		return
+	}
+
+	var body dto.PrepareExperimentBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.Error(err)
+		return
+	}
+
+	prep, err := ctrl.PrepareExperimentUC.Execute(
+		c.Request.Context(),
+		uint(experimentID),
+		body.CropAlt,
+		entity.BGRType(body.BGRType),
+		body.BGRAlt,
+	)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusCreated, mapper.ToPreparedExperimentResponse(prep))
 }

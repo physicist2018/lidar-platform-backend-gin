@@ -126,8 +126,8 @@ github.com/pelletier/go-toml/v2 v2.3.1 h1:MYEvvGnQjeNkRF1qUuGolNtNExTDwct51yp7ol
 github.com/pelletier/go-toml/v2 v2.3.1/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/philhofer/fwd v1.2.0 h1:e6DnBTl7vGY+Gz322/ASL4Gyp1FspeMvx1RNDoToZuM=
 github.com/philhofer/fwd v1.2.0/go.mod h1:RqIHx9QI14HlwKwm98g9Re5prTQ6LdeRQn+gXJFxsJM=
-github.com/physicist2018/licelfile/v2 v2.1.4 h1:4qoN39KauIFjKjLXPk1TmXDm3IEKXzwJgZdq/C4HGpI=
-github.com/physicist2018/licelfile/v2 v2.1.4/go.mod h1:Z5Y0dggOdMencGAF1p/FpR6zG4keygX1bE4QoLLeTfc=
+github.com/physicist2018/licelfile/v2 v2.1.5 h1:KyhCJUjcIULMvLDPLph7YTkwSFSTaNLAlQYwjwBe7ho=
+github.com/physicist2018/licelfile/v2 v2.1.5/go.mod h1:Z5Y0dggOdMencGAF1p/FpR6zG4keygX1bE4QoLLeTfc=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/quic-go/qpack v0.6.0 h1:g7W+BMYynC1LbYLSqRt8PBg5Tgwxn214ZZR34VIOjz8=

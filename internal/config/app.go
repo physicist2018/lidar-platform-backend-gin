@@ -98,7 +98,12 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	getExpByIDUC := usecaseImpl.NewGetExperimentByIDUseCaseImpl(expRepo, log)
 	getAllExpUC := usecaseImpl.NewGetAllExperimentsUseCaseImpl(expRepo, log)
 
-	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC)
+	// --- Wire PreparedExperiment domain ---
+	prepDataSource := dsImpl.NewPreparedExperimentDataSourceImpl(dbConn, log)
+	prepRepo := repoImpl.NewPreparedExperimentRepositoryImpl(prepDataSource, log)
+	prepareExpUC := usecaseImpl.NewPrepareExperimentUseCaseImpl(expRepo, prepRepo, minioClient, workerPool, log)
+
+	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, prepareExpUC)
 
 	route.NewRouteConfig(ginEngine, cfg.JWTSecret, userController, authController, expController).Setup()
 

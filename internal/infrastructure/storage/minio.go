@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/minio/minio-go/v7"
@@ -71,6 +72,33 @@ func (m *MinioClient) UploadFile(ctx context.Context, objectName, filePath, cont
 		"object": objectName,
 		"size":   stat.Size(),
 	}).Info("file uploaded to minio")
+
+	return nil
+}
+
+// DownloadFile downloads an object from Minio and saves it to a local file.
+func (m *MinioClient) DownloadFile(ctx context.Context, objectName, filePath string) error {
+	obj, err := m.Client.GetObject(ctx, m.Bucket, objectName, minio.GetObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("minio download: get object %q: %w", objectName, err)
+	}
+	defer obj.Close()
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("minio download: create file: %w", err)
+	}
+	defer file.Close()
+
+	written, err := io.Copy(file, obj)
+	if err != nil {
+		return fmt.Errorf("minio download: copy object %q: %w", objectName, err)
+	}
+
+	m.Log.WithFields(logrus.Fields{
+		"object": objectName,
+		"size":   written,
+	}).Info("file downloaded from minio")
 
 	return nil
 }
