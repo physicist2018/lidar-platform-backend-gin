@@ -265,18 +265,19 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 // Visualize godoc
 //
 //	@Summary		Visualize prepared experiment data
-//	@Description	Generates a heatmap or averaged profile from prepared experiment data. Returns SVG or Plotly JSON.
+//	@Description	Generates a heatmap or averaged profile from prepared experiment data. Returns a presigned URL to the chart in Minio.
 //	@Tags			experiments
-//	@Produce		*/*
+//	@Produce		json
 //	@Security		BearerAuth
 //	@Param			id			path		uint	true	"Prepared experiment ID"
 //	@Param			wavelen		path		float64	true	"Wavelength"
-//	@Param			photon		path		bool	true	"Photon channel"
+//	@Param			photon		path		int		true	"Photon/analog mode: 0=analog, 1=photon"
 //	@Param			polarization	path		string	true	"Polarization"
 //	@Param			action		path		string	true	"image or profile"	Enums(image, profile)
 //	@Param			type		query		string	false	"Output type: svg, json or png"	Enums(svg, json, png)	default(svg)
 //	@Param			formula		query		string	false	"Signal formula: raw, rangecorr, lograngecorr"	Enums(raw, rangecorr, lograngecorr)	default(raw)
-//	@Success		200			{string}	string	"SVG, PNG image or Plotly JSON"
+//	@Param			regenerate	query		bool	false	"Force regeneration, ignoring cache"	default(false)
+//	@Success		200			{object}	dto.VisualizeChartResponse
 //	@Failure		400			{object}	dto.ErrorResponse	"Bad request"
 //	@Failure		401			{object}	dto.ErrorResponse	"Unauthorized"
 //	@Failure		404			{object}	dto.ErrorResponse	"Not found"
@@ -298,7 +299,7 @@ func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 		query.Formula = "raw"
 	}
 
-	result, err := ctrl.VisualizePreparedExperimentUC.Execute(
+	url, err := ctrl.VisualizePreparedExperimentUC.Execute(
 		c.Request.Context(),
 		uri.ID,
 		uri.Wavelen,
@@ -307,11 +308,12 @@ func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 		uri.Action,
 		query.Type,
 		query.Formula,
+		query.Regenerate,
 	)
 	if err != nil {
 		c.Error(err)
 		return
 	}
 
-	c.Data(http.StatusOK, result.ContentType, result.Body)
+	c.JSON(http.StatusOK, dto.VisualizeChartResponse{URL: url})
 }

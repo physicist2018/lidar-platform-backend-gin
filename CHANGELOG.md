@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] — 2026-06-02
+
+### Added
+
+- **Кеширование графиков визуализации** — эндпоинт `GET /prepared/:id/:wavelen/:photon/:polarization/:action` теперь сохраняет сгенерированные графики в MinIO и запоминает их в БД.
+  - Новая модель `ExperimentChart` (chartType, formula, wavelen, polarization, isPhoton, pathToObject).
+  - Таблица `experiment_charts` с уникальностью по `(experiment_id, chart_type, formula, wavelen, polarization, is_photon)`.
+  - Query-параметр `?regenerate=true` — принудительная перерисовка. По умолчанию (`false`) — ищет кеш в БД, возвращает presigned URL без перегенерации.
+  - MinIO: новые методы `UploadBytes` (загрузка `[]byte`) и `PresignedGetObject` (presigned URL на 1 час).
+
+### Changed
+
+- **`photon` в URI** — с `bool` на `int8`: `0` = analog, `1` = photon (поддержка `2` на будущее).
+- **Ответ эндпоинта визуализации** — вместо raw-контента (SVG/PNG/JSON) теперь возвращается `{"url": "https://..."}` — presigned URL на объект в MinIO.
+- **Сигнатура `VisualizePreparedExperimentUseCase.Execute`** — добавлены `isPhoton int8`, `regenerate bool`; возвращает `(string, error)`.
+- **DI** — `ExperimentChartDataSource` → `ExperimentChartRepository` → `VisualizePreparedExperimentUseCaseImpl`.
+- **AutoMigrate** — добавлена таблица `experiment_charts`.
+
 ## [0.3.4] — 2026-06-02
 
 ### Added

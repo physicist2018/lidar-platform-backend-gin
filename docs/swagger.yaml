@@ -31,6 +31,26 @@ definitions:
       message:
         type: string
     type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelResponse:
+    properties:
+      isActive:
+        description: 0 = no signal, 1 = has signal
+        type: integer
+      isPhoton:
+        description: 0 = analog, 1 = photon
+        type: integer
+      polarization:
+        type: string
+      wavelen:
+        type: number
+    type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelsResponse:
+    properties:
+      channels:
+        items:
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelResponse'
+        type: array
+    type: object
   github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse:
     properties:
       data:
@@ -179,6 +199,11 @@ definitions:
       name:
         type: string
       role:
+        type: string
+    type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.VisualizeChartResponse:
+    properties:
+      url:
         type: string
     type: object
 host: localhost:8080
@@ -376,6 +401,44 @@ paths:
       summary: Get experiment by ID
       tags:
       - experiments
+  /experiments/{id}/channels:
+    get:
+      description: Returns the list of available measurement channels (wavelength,
+        polarization, photon/analog) for an experiment.
+      parameters:
+      - description: Experiment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelsResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get experiment channels
+      tags:
+      - experiments
   /experiments/{id}/prepare:
     post:
       consumes:
@@ -429,7 +492,7 @@ paths:
   /prepared/{id}/{wavelen}/{photon}/{polarization}/{action}:
     get:
       description: Generates a heatmap or averaged profile from prepared experiment
-        data. Returns SVG or Plotly JSON.
+        data. Returns a presigned URL to the chart in Minio.
       parameters:
       - description: Prepared experiment ID
         in: path
@@ -442,11 +505,11 @@ paths:
         name: wavelen
         required: true
         type: number
-      - description: Photon channel
+      - description: 'Photon/analog mode: 0=analog, 1=photon'
         in: path
         name: photon
         required: true
-        type: boolean
+        type: integer
       - description: Polarization
         in: path
         name: polarization
@@ -478,13 +541,18 @@ paths:
         in: query
         name: formula
         type: string
+      - default: false
+        description: Force regeneration, ignoring cache
+        in: query
+        name: regenerate
+        type: boolean
       produces:
-      - '*/*'
+      - application/json
       responses:
         "200":
-          description: SVG, PNG image or Plotly JSON
+          description: OK
           schema:
-            type: string
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.VisualizeChartResponse'
         "400":
           description: Bad request
           schema:

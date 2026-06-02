@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 
 	"github.com/physicist2018/licelfile/v2/licelformat"
 	"github.com/sirupsen/logrus"
@@ -19,25 +20,29 @@ import (
 
 const (
 	defaultOutputType = "svg"
+	presignExpiry     = 1 * time.Hour
 )
 
 type visualizePreparedExperimentUseCaseImpl struct {
-	prepRepo repository.PreparedExperimentRepository
-	minio    *storage.MinioClient
-	log      *logrus.Logger
+	prepRepo   repository.PreparedExperimentRepository
+	chartRepo  repository.ExperimentChartRepository
+	minio      *storage.MinioClient
+	log        *logrus.Logger
 }
 
 var _ usecase.VisualizePreparedExperimentUseCase = (*visualizePreparedExperimentUseCaseImpl)(nil)
 
 func NewVisualizePreparedExperimentUseCaseImpl(
 	prepRepo repository.PreparedExperimentRepository,
+	chartRepo repository.ExperimentChartRepository,
 	minio *storage.MinioClient,
 	log *logrus.Logger,
 ) *visualizePreparedExperimentUseCaseImpl {
 	return &visualizePreparedExperimentUseCaseImpl{
-		prepRepo: prepRepo,
-		minio:    minio,
-		log:      log,
+		prepRepo:  prepRepo,
+		chartRepo: chartRepo,
+		minio:     minio,
+		log:       log,
 	}
 }
 
@@ -52,12 +57,13 @@ func (u *visualizePreparedExperimentUseCaseImpl) Execute(
 	ctx context.Context,
 	prepID uint,
 	wavelen float64,
-	isPhoton bool,
+	isPhoton int8,
 	polarization string,
 	vizType string,
 	outputType string,
 	formula string,
-) (*usecase.VisualizeResult, error) {
+	regenerate bool,
+) (string, error) {
 	if outputType == "" {
 		outputType = defaultOutputType
 	}
@@ -65,41 +71,55 @@ func (u *visualizePreparedExperimentUseCaseImpl) Execute(
 		formula = "raw"
 	}
 	if formula != "raw" && formula != "rangecorr" && formula != "lograngecorr" {
-		return nil, fmt.Errorf("unknown formula: %s (valid: raw, rangecorr, lograngecorr)", formula)
+		return "", fmt.Errorf("unknown formula: %s (valid: raw, rangecorr, lograngecorr)", formula)
 	}
 
-	// 1. Find PreparedExperiment
+	// 1. Find PreparedExperiment to get ExperimentID
 	prep, err := u.prepRepo.FindByID(ctx, prepID)
 	if err != nil {
-		return nil, fmt.Errorf("prepared experiment not found: %w", err)
+		return "", fmt.Errorf("prepared experiment not found: %w", err)
 	}
 	if prep.Status != entity.PrepStatusDone {
-		return nil, fmt.Errorf("prepared experiment %d is not ready (status: %s)", prep.ID, prep.Status)
+		return "", fmt.Errorf("prepared experiment %d is not ready (status: %s)", prep.ID, prep.Status)
 	}
 
-	// 2. Download prepared zip from Minio
+	experimentID := prep.ExperimentID
+
+	// 2. If not forced regenerate, try to find cached chart in DB
+	if !regenerate {
+		cached, err := u.chartRepo.FindByParams(ctx, experimentID, vizType, formula, wavelen, polarization, isPhoton)
+		if err != nil {
+			u.log.WithError(err).Warn("failed to lookup cached chart, will regenerate")
+		}
+		if cached != nil {
+			u.log.WithField("path", cached.PathToObject).Info("returning cached chart")
+			return u.minio.PresignedGetObject(ctx, cached.PathToObject, presignExpiry)
+		}
+	}
+
+	// 3. Download prepared zip from Minio
 	tempDir, err := os.MkdirTemp("", "visualize-*")
 	if err != nil {
-		return nil, fmt.Errorf("create temp dir: %w", err)
+		return "", fmt.Errorf("create temp dir: %w", err)
 	}
 	defer os.RemoveAll(tempDir)
 
 	localZipPath := filepath.Join(tempDir, "prepared.zip")
 	if err := u.minio.DownloadFile(ctx, prep.PathToData, localZipPath); err != nil {
-		return nil, fmt.Errorf("download prepared data: %w", err)
+		return "", fmt.Errorf("download prepared data: %w", err)
 	}
 
-	// 3. Parse the zip into LicelPack
+	// 4. Parse the zip into LicelPack
 	dataPack, err := licelformat.NewLicelPackFromZip(localZipPath)
 	if err != nil {
-		return nil, fmt.Errorf("parse prepared zip: %w", err)
+		return "", fmt.Errorf("parse prepared zip: %w", err)
 	}
 
-	// 4. Extract matching profiles with time metadata
-	profiles := u.extractProfiles(dataPack, isPhoton, wavelen, polarization)
+	// 5. Extract matching profiles with time metadata
+	profiles := u.extractProfiles(dataPack, isPhoton != 0, wavelen, polarization)
 	if len(profiles) == 0 {
-		return nil, fmt.Errorf(
-			"no profiles found for wavelen=%.0f photon=%v polarization=%s",
+		return "", fmt.Errorf(
+			"no profiles found for wavelen=%.0f isPhoton=%d polarization=%s",
 			wavelen, isPhoton, polarization,
 		)
 	}
@@ -109,15 +129,52 @@ func (u *visualizePreparedExperimentUseCaseImpl) Execute(
 		return profiles[i].StartTime < profiles[j].StartTime
 	})
 
-	// 5. Generate visualization
+	// 6. Generate visualization
+	var result *usecase.VisualizeResult
 	switch vizType {
 	case "image":
-		return u.genHeatmap(profiles, outputType, formula)
+		result, err = u.genHeatmap(profiles, outputType, formula)
 	case "profile":
-		return u.genProfile(profiles, outputType, formula)
+		result, err = u.genProfile(profiles, outputType, formula)
 	default:
-		return nil, fmt.Errorf("unknown visualization type: %s", vizType)
+		return "", fmt.Errorf("unknown visualization type: %s", vizType)
 	}
+	if err != nil {
+		return "", err
+	}
+
+	// 7. Upload to Minio and save record to DB
+	ext := outputType
+	if ext == "svg" {
+		ext = "svg"
+	} else if ext == "json" {
+		ext = "json"
+	} else if ext == "png" {
+		ext = "png"
+	}
+
+	objectPath := fmt.Sprintf("experiments/%d/images/%s-%.0f-%s-%d-%s.%s",
+		experimentID, vizType, wavelen, polarization, isPhoton, formula, ext)
+
+	if err := u.minio.UploadBytes(ctx, objectPath, result.Body, result.ContentType); err != nil {
+		return "", fmt.Errorf("upload chart to minio: %w", err)
+	}
+
+	chart := &entity.ExperimentChart{
+		ExperimentID: experimentID,
+		ChartType:    vizType,
+		Formula:      formula,
+		Wavelen:      wavelen,
+		Polarization: polarization,
+		IsPhoton:     isPhoton,
+		PathToObject: objectPath,
+	}
+	if err := u.chartRepo.Create(ctx, chart); err != nil {
+		u.log.WithError(err).Warn("failed to save experiment chart record (chart is still uploaded)")
+		// Non-fatal: the chart was uploaded, just could not save DB record
+	}
+
+	return u.minio.PresignedGetObject(ctx, objectPath, presignExpiry)
 }
 
 // extractProfiles walks all files in the pack and collects matching profiles.

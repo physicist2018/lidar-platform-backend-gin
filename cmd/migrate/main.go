@@ -24,6 +24,7 @@ func main() {
 		&dbEntity.UserEntity{},
 		&dbEntity.ExperimentEntity{},
 		&dbEntity.PreparedExperimentEntity{},
+		&dbEntity.ExperimentChartEntity{},
 	); err != nil {
 		log.Fatalf("auto-migration failed: %v", err)
 	}

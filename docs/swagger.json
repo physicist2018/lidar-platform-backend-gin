@@ -290,6 +290,64 @@
                 }
             }
         },
+        "/experiments/{id}/channels": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the list of available measurement channels (wavelength, polarization, photon/analog) for an experiment.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "experiments"
+                ],
+                "summary": "Get experiment channels",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Experiment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/experiments/{id}/prepare": {
             "post": {
                 "security": [
@@ -373,9 +431,9 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Generates a heatmap or averaged profile from prepared experiment data. Returns SVG or Plotly JSON.",
+                "description": "Generates a heatmap or averaged profile from prepared experiment data. Returns a presigned URL to the chart in Minio.",
                 "produces": [
-                    "*/*"
+                    "application/json"
                 ],
                 "tags": [
                     "experiments"
@@ -398,8 +456,8 @@
                         "required": true
                     },
                     {
-                        "type": "boolean",
-                        "description": "Photon channel",
+                        "type": "integer",
+                        "description": "Photon/analog mode: 0=analog, 1=photon",
                         "name": "photon",
                         "in": "path",
                         "required": true
@@ -445,13 +503,20 @@
                         "description": "Signal formula: raw, rangecorr, lograngecorr",
                         "name": "formula",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Force regeneration, ignoring cache",
+                        "name": "regenerate",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "SVG, PNG image or Plotly JSON",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.VisualizeChartResponse"
                         }
                     },
                     "400": {
@@ -882,6 +947,36 @@
                 }
             }
         },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelResponse": {
+            "type": "object",
+            "properties": {
+                "isActive": {
+                    "description": "0 = no signal, 1 = has signal",
+                    "type": "integer"
+                },
+                "isPhoton": {
+                    "description": "0 = analog, 1 = photon",
+                    "type": "integer"
+                },
+                "polarization": {
+                    "type": "string"
+                },
+                "wavelen": {
+                    "type": "number"
+                }
+            }
+        },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelsResponse": {
+            "type": "object",
+            "properties": {
+                "channels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelResponse"
+                    }
+                }
+            }
+        },
         "github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse": {
             "type": "object",
             "properties": {
@@ -1100,6 +1195,14 @@
                     "type": "string"
                 },
                 "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.VisualizeChartResponse": {
+            "type": "object",
+            "properties": {
+                "url": {
                     "type": "string"
                 }
             }

@@ -102,8 +102,10 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	// --- Wire PreparedExperiment domain ---
 	prepDataSource := dsImpl.NewPreparedExperimentDataSourceImpl(dbConn, log)
 	prepRepo := repoImpl.NewPreparedExperimentRepositoryImpl(prepDataSource, log)
+	chartDataSource := dsImpl.NewExperimentChartDataSourceImpl(dbConn, log)
+	chartRepo := repoImpl.NewExperimentChartRepositoryImpl(chartDataSource, log)
 	prepareExpUC := usecaseImpl.NewPrepareExperimentUseCaseImpl(expRepo, prepRepo, minioClient, workerPool, log)
-	visualizePrepUC := usecaseImpl.NewVisualizePreparedExperimentUseCaseImpl(prepRepo, minioClient, log)
+	visualizePrepUC := usecaseImpl.NewVisualizePreparedExperimentUseCaseImpl(prepRepo, chartRepo, minioClient, log)
 
 	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC, prepareExpUC, visualizePrepUC)
 

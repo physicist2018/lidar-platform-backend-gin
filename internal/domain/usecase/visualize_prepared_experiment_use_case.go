@@ -13,10 +13,11 @@ type VisualizePreparedExperimentUseCase interface {
 		ctx context.Context,
 		prepID uint,
 		wavelen float64,
-		isPhoton bool,
+		isPhoton int8,
 		polarization string,
-		vizType string, // "image" or "profile"
-		outputType string, // "svg" or "json"
-		formula string, // "raw", "rangecorr", "lograngecorr"
-	) (*VisualizeResult, error)
+		vizType string,
+		outputType string,
+		formula string,
+		regenerate bool,
+	) (string, error) // returns presigned Minio URL
 }

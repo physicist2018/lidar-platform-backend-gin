@@ -86,9 +86,9 @@ go run ./cmd/app
 
 | Метод | Путь | Роль | Описание |
 |---|---|---|---|
-| `GET` | `/prepared/:id/:wavelen/:photon/:polarization/:action` | **admin, manager** | Визуализация: heatmap или профиль (`?type=svg|json&formula=raw|rangecorr|lograngecorr`) |
+| `GET` | `/prepared/:id/:wavelen/:photon/:polarization/:action` | **admin, manager** | Визуализация: возвращает `{"url"}` — presigned URL на график в MinIO (`?type=svg|json|png&formula=raw|rangecorr|lograngecorr&regenerate=true`) |
 
-> **GET /prepared/:id/:wavelen/:photon/:polarization/:action** — `:action` = `image` (heatmap: X=время, Y=дистанция) или `profile` (усреднённый XY-график). `:wavelen` — длина волны (например `532`), `:photon` — `true` (фотонный) или `false` (аналоговый). `type=svg` (по умолчанию) — SVG-изображение, `type=json` — Plotly JSON. `formula=raw` — сырой сигнал P, `rangecorr` — P×r², `lograngecorr` — log₁₀(P×r²).
+> **GET /prepared/:id/:wavelen/:photon/:polarization/:action** — `:action` = `image` (heatmap: X=время, Y=дистанция) или `profile` (усреднённый XY-график). `:wavelen` — длина волны (например `532`), `:photon` — `0` (аналоговый) или `1` (фотонный). `type=svg` (по умолчанию) — SVG-изображение, `type=png` — PNG, `type=json` — Plotly JSON. `formula=raw` — сырой сигнал P, `rangecorr` — P×r², `lograngecorr` — log₁₀(P×r²). `?regenerate=true` — принудительная перерисовка в обход кеша. Ответ — `{"url": "https://minio/..."}`, presigned URL действителен 1 час.
 
 > **POST /experiments** — возвращает `201` сразу со статусом `staged`. Препроцессинг (парсинг licel zip, загрузка в Minio) выполняется асинхронно в worker pool. Статус обновляется: `staged → uploading → done|failed`.
 

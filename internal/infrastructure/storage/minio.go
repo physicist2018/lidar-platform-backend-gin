@@ -1,10 +1,12 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -74,6 +76,34 @@ func (m *MinioClient) UploadFile(ctx context.Context, objectName, filePath, cont
 	}).Info("file uploaded to minio")
 
 	return nil
+}
+
+// UploadBytes uploads data from a byte slice to Minio.
+func (m *MinioClient) UploadBytes(ctx context.Context, objectName string, data []byte, contentType string) error {
+	reader := bytes.NewReader(data)
+	_, err := m.Client.PutObject(ctx, m.Bucket, objectName, reader, int64(len(data)), minio.PutObjectOptions{
+		ContentType: contentType,
+	})
+	if err != nil {
+		return fmt.Errorf("minio upload bytes: put object %q: %w", objectName, err)
+	}
+
+	m.Log.WithFields(logrus.Fields{
+		"object": objectName,
+		"size":   len(data),
+	}).Info("bytes uploaded to minio")
+
+	return nil
+}
+
+// PresignedGetObject generates a temporary presigned URL for downloading an object.
+// The URL is valid for the specified duration.
+func (m *MinioClient) PresignedGetObject(ctx context.Context, objectName string, expiry time.Duration) (string, error) {
+	url, err := m.Client.PresignedGetObject(ctx, m.Bucket, objectName, expiry, nil)
+	if err != nil {
+		return "", fmt.Errorf("minio presigned url: %w", err)
+	}
+	return url.String(), nil
 }
 
 // DownloadFile downloads an object from Minio and saves it to a local file.
