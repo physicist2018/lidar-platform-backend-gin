@@ -149,7 +149,9 @@ internal/
     ├── response/        # AppError
     └── worker/          # Worker pool (MAX_WORKERS)
 
-pkg/dto/                 # Публичные DTO (запросы/ответы)
+pkg/
+├── dto/                 # Публичные DTO (запросы/ответы)
+└── visualize/           # Рендеринг графиков (SVG, PNG, Plotly JSON)
 docs/                    # Swagger (авто-генерируется)
 test/                    # Unit, integration, k6
 ```

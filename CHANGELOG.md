@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.3] — 2026-06-02
+
+### Changed
+
+- **Рефакторинг визуализации** — код отрисовки графиков (SVG, PNG, Plotly JSON) вынесен из
+  `internal/domain/usecase/implementation/visualize_prepared_experiment_use_case_impl.go` в
+  новый пакет `pkg/visualize/`.
+  - Файл use-case сократился с ~1100 до ~293 строк и теперь содержит только бизнес-логику:
+    загрузку данных, парсинг, подготовку данных и маршрутизацию в рендереры.
+  - Пакет `pkg/visualize/` состоит из 8 файлов с чистыми standalone-функциями, не зависит от
+    `internal/` и может переиспользоваться или тестироваться изолированно:
+    - `result.go` — тип `Result` (ContentType + Body).
+    - `utils.go` — `FormatTimeHHMM`, `MinInt`, `Percentile`, `ApplyFormula`, `HeatmapColor`.
+    - `draw.go` — `DrawDashedLineH`, `DrawDashedLineV`, `LoadFont`.
+    - `plotly.go` — Plotly-структуры + `HeatmapToPlotly` / `ProfileToPlotly`.
+    - `heatmap_svg.go` — `HeatmapToSVG`.
+    - `heatmap_png.go` — `HeatmapToPNG`.
+    - `profile_svg.go` — `ProfileToSVG`.
+    - `profile_png.go` — `ProfileToPNG`.
+  - Контракты и публичное API не изменены.
+
 ## [0.3.2] — 2026-06-01
 
 ### Added
