@@ -37,3 +37,16 @@ func ToExperimentResponseList(p *pagination.Pagination[entity.Experiment]) *dto.
 		TotalPages: p.TotalPages,
 	}
 }
+
+func ToExperimentChannelsResponse(channels []entity.ExperimentChannel) *dto.ExperimentChannelsResponse {
+	items := make([]dto.ExperimentChannelResponse, len(channels))
+	for i, ch := range channels {
+		items[i] = dto.ExperimentChannelResponse{
+			Wavelength:   ch.Wavelength,
+			Polarization: ch.Polarization,
+			IsPhoton:     ch.IsPhoton,
+			IsActive:     ch.IsActive,
+		}
+	}
+	return &dto.ExperimentChannelsResponse{Channels: items}
+}

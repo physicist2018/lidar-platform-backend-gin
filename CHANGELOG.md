@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.4] — 2026-06-02
+
+### Added
+
+- **GET /experiments/{id}/channels** — список измерительных каналов эксперимента.
+  - Ответ: `{ "channels": [{ "wavelen": 355.0, "polarization": "parallel", "isPhoton": 0, "isActive": 1 }, ...] }`.
+  - Каналы извлекаются при препроцессинге из заголовков licel-профилей: `LicelProfile.Wavelength`, `.Polarization`, `.Photon`, `.Active`.
+  - `isActive = 0`, если хотя бы один профиль канала имеет `Active=false`.
+  - Хранятся в колонке `available_channels` таблицы `experiments` (тип: `jsonb`).
+
+### Changed
+
+- **Experiment** — новое поле `AvailableChannels []ExperimentChannel` на всех слоях (entity, DB, DTO).
+- **datasource/ExperimentEntity** — добавлена колонка `AvailableChannels datatypes.JSON` (gorm `jsonb`).
+- **create_experiment_use_case_impl** — `preprocess()` теперь сохраняет каналы при финальном `Update`.
+
 ## [0.3.3] — 2026-06-02
 
 ### Changed

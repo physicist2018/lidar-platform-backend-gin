@@ -78,6 +78,7 @@ go run ./cmd/app
 |---|---|---|---|
 | `GET` | `/experiments` | Любая | Список с пагинацией / фильтрацией (`status`, `title`) |
 | `GET` | `/experiments/:id` | Любая | Получить один (со статусом и путями к файлам) |
+| `GET` | `/experiments/:id/channels` | Любая | Список каналов эксперимента (`wavelen`, `polarization`, `isPhoton`, `isActive`) |
 | `POST` | `/experiments` | **admin** | Создать (multipart: `title`, `licelZip`, `licelBgr`, `meteoFile`) |
 | `POST` | `/experiments/:id/prepare` | **admin, manager** | Подготовка данных (JSON: `crop_alt`, `bgr_type`, `bgr_alt`) |
 

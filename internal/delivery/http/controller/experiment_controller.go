@@ -23,6 +23,7 @@ type ExperimentController struct {
 	CreateExperimentUC            usecase.CreateExperimentUseCase
 	GetExperimentByIDUC           usecase.GetExperimentByIDUseCase
 	GetAllExperimentsUC           usecase.GetAllExperimentsUseCase
+	GetExperimentChannelsUC       usecase.GetExperimentChannelsUseCase
 	PrepareExperimentUC           usecase.PrepareExperimentUseCase
 	VisualizePreparedExperimentUC usecase.VisualizePreparedExperimentUseCase
 }
@@ -32,6 +33,7 @@ func NewExperimentController(
 	create usecase.CreateExperimentUseCase,
 	getByID usecase.GetExperimentByIDUseCase,
 	getAll usecase.GetAllExperimentsUseCase,
+	getChannels usecase.GetExperimentChannelsUseCase,
 	prepare usecase.PrepareExperimentUseCase,
 	visualize usecase.VisualizePreparedExperimentUseCase,
 ) *ExperimentController {
@@ -40,6 +42,7 @@ func NewExperimentController(
 		CreateExperimentUC:            create,
 		GetExperimentByIDUC:           getByID,
 		GetAllExperimentsUC:           getAll,
+		GetExperimentChannelsUC:       getChannels,
 		PrepareExperimentUC:           prepare,
 		VisualizePreparedExperimentUC: visualize,
 	}
@@ -176,6 +179,38 @@ func (ctrl *ExperimentController) GetAll(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, mapper.ToExperimentResponseList(result))
+}
+
+// GetChannels godoc
+//
+//	@Summary		Get experiment channels
+//	@Description	Returns the list of available measurement channels (wavelength, polarization, photon/analog) for an experiment.
+//	@Tags			experiments
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		uint	true	"Experiment ID"
+//	@Success		200	{object}	dto.ExperimentChannelsResponse
+//	@Failure		400	{object}	dto.ErrorResponse	"Bad request"
+//	@Failure		401	{object}	dto.ErrorResponse	"Unauthorized"
+//	@Failure		404	{object}	dto.ErrorResponse	"Not found"
+//	@Failure		500	{object}	dto.ErrorResponse	"Internal server error"
+//	@Router			/experiments/{id}/channels [get]
+func (ctrl *ExperimentController) GetChannels(c *gin.Context) {
+	var uri struct {
+		ID uint `uri:"id" binding:"required,min=1"`
+	}
+	if err := c.ShouldBindUri(&uri); err != nil {
+		c.Error(err)
+		return
+	}
+
+	channels, err := ctrl.GetExperimentChannelsUC.Execute(c.Request.Context(), uri.ID)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, mapper.ToExperimentChannelsResponse(channels))
 }
 
 // Prepare godoc

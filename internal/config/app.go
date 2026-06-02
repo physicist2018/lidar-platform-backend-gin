@@ -97,6 +97,7 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	createExpUC := usecaseImpl.NewCreateExperimentUseCaseImpl(expRepo, minioClient, workerPool, log)
 	getExpByIDUC := usecaseImpl.NewGetExperimentByIDUseCaseImpl(expRepo, log)
 	getAllExpUC := usecaseImpl.NewGetAllExperimentsUseCaseImpl(expRepo, log)
+	getExpChannelsUC := usecaseImpl.NewGetExperimentChannelsUseCaseImpl(expRepo, log)
 
 	// --- Wire PreparedExperiment domain ---
 	prepDataSource := dsImpl.NewPreparedExperimentDataSourceImpl(dbConn, log)
@@ -104,7 +105,7 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	prepareExpUC := usecaseImpl.NewPrepareExperimentUseCaseImpl(expRepo, prepRepo, minioClient, workerPool, log)
 	visualizePrepUC := usecaseImpl.NewVisualizePreparedExperimentUseCaseImpl(prepRepo, minioClient, log)
 
-	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, prepareExpUC, visualizePrepUC)
+	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC, prepareExpUC, visualizePrepUC)
 
 	route.NewRouteConfig(ginEngine, cfg.JWTSecret, userController, authController, expController).Setup()
 

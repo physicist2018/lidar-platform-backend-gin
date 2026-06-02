@@ -2,6 +2,7 @@ package implementation
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -72,6 +73,14 @@ func (d *ExperimentDataSourceImpl) Update(ctx context.Context, exp *entity.Exper
 	if exp.ErrorMsg != "" {
 		updates["error_msg"] = exp.ErrorMsg
 	}
+	if len(exp.AvailableChannels) > 0 {
+		channelsJSON, err := json.Marshal(exp.AvailableChannels)
+		if err != nil {
+			d.Log.WithError(err).Error("ExperimentDataSource.Update: marshal available_channels")
+		} else {
+			updates["available_channels"] = channelsJSON
+		}
+	}
 
 	result := d.DB.WithContext(ctx).Model(&dbEntity.ExperimentEntity{}).Where("id = ?", exp.ID).Updates(updates)
 	if result.Error != nil {
@@ -133,7 +142,7 @@ func (d *ExperimentDataSourceImpl) GetAll(ctx context.Context, filter *entity.Ex
 }
 
 func toExperimentDomain(dbExp *dbEntity.ExperimentEntity) entity.Experiment {
-	return entity.Experiment{
+	exp := entity.Experiment{
 		ID:                   dbExp.ID,
 		UserID:               dbExp.UserID,
 		Title:                dbExp.Title,
@@ -148,4 +157,6 @@ func toExperimentDomain(dbExp *dbEntity.ExperimentEntity) entity.Experiment {
 		CreatedAt:            dbExp.CreatedAt,
 		UpdatedAt:            dbExp.UpdatedAt,
 	}
+	_ = json.Unmarshal(dbExp.AvailableChannels, &exp.AvailableChannels)
+	return exp
 }

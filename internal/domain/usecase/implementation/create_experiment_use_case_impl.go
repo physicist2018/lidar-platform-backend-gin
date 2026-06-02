@@ -133,6 +133,10 @@ func (u *createExperimentUseCaseImpl) preprocess(expID uint, tempDir, zipPath, b
 	minStart = pack.StartTime
 	maxStop = pack.StopTime
 
+	// 2.5 Extract available channels from the parsed data pack
+	channels := extractChannels(pack)
+	log.WithField("channel_count", len(channels)).Info("channels extracted from licel pack")
+
 	// 3. Upload files to Minio
 	basePath := fmt.Sprintf("experiments/%d/source", expID)
 	zipObject := basePath + "/licel.zip"
@@ -164,6 +168,7 @@ func (u *createExperimentUseCaseImpl) preprocess(expID uint, tempDir, zipPath, b
 		LicelZipPath:         zipObject,
 		LicelBgrPath:         bgrObject,
 		MeteoFilePath:        meteoObject,
+		AvailableChannels:    channels,
 	}); err != nil {
 		log.WithError(err).Error("failed to update experiment to done")
 		u.setFailed(ctx, expID, err.Error())
@@ -207,4 +212,53 @@ func saveUploadedFile(fh *multipart.FileHeader, dst string) error {
 	}
 
 	return nil
+}
+
+// extractChannels walks all licel files in the pack and collects unique channels
+// identified by (wavelength, polarization, photon/analog).
+// isActive = 0 if at least one profile in that channel has prof.Active == false.
+func extractChannels(pack *licelformat.LicelPack) []entity.ExperimentChannel {
+	type channelKey struct {
+		wavelength   float64
+		polarization string
+		isPhoton     int
+	}
+
+	seen := map[channelKey]entity.ExperimentChannel{}
+
+	for _, licf := range pack.Data {
+		for _, prof := range licf.Profiles {
+			photon := 0
+			if prof.Photon {
+				photon = 1
+			}
+			key := channelKey{
+				wavelength:   prof.Wavelength,
+				polarization: prof.Polarization,
+				isPhoton:     photon,
+			}
+
+			if existing, ok := seen[key]; !ok {
+				active := 0
+				if prof.Active {
+					active = 1
+				}
+				seen[key] = entity.ExperimentChannel{
+					Wavelength:   prof.Wavelength,
+					Polarization: prof.Polarization,
+					IsPhoton:     photon,
+					IsActive:     active,
+				}
+			} else if existing.IsActive == 1 && !prof.Active {
+				existing.IsActive = 0
+				seen[key] = existing
+			}
+		}
+	}
+
+	channels := make([]entity.ExperimentChannel, 0, len(seen))
+	for _, ch := range seen {
+		channels = append(channels, ch)
+	}
+	return channels
 }

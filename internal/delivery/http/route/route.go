@@ -73,6 +73,7 @@ func (rc *RouteConfig) SetupExperimentRoutes(rg *gin.RouterGroup) {
 	{
 		expRoutes.GET("", rc.ExperimentController.GetAll)
 		expRoutes.GET("/:id", rc.ExperimentController.GetByID)
+		expRoutes.GET("/:id/channels", rc.ExperimentController.GetChannels)
 
 		// Admin-only routes
 		admin := expRoutes.Group("")
