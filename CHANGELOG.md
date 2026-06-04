@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] — 2026-06-04
+
+### Added
+
+- **Склейка аналогового и фотонного каналов** — новый эндпоинт `POST /experiments/:id/glue`.
+  - Тело запроса: `{"wavelengths": [...], "h1": ..., "h2": ...}`.
+  - Статус PreparedExperiment должен быть `PrepStatusDoneStageOne` или `PrepStatusDoneStageTwo`, иначе ошибка `400`.
+  - Для каждой длины волны вызывается `licelformat.LicelPack.Glue(wvl, h1, h2)` — находит аналоговый (`DeviceID=BT`) и фотонный (`DeviceID=BC`) профили, вычисляет коэффициент склейки на интервале [h1;h2], создаёт склеенный профиль (`DeviceID=BG`).
+  - Асинхронный запуск через worker pool, ответ `202 Accepted {"message": "glue task submitted"}`.
+  - Успех → статус `PrepStatusDoneStageTwo`, ошибка → `PrepStatusFailed`.
+  - Повторный glue для тех же длин волн заменяет старые склеенные профили (апдейт).
+
+### Changed
+
+- **Статусная модель PreparedExperiment** — разрешён переход `PrepStatusDoneStageOne → {PrepStatusDoneStageTwo, PrepStatusFailed}` и повторный `PrepStatusDoneStageTwo → {PrepStatusDoneStageTwo, PrepStatusFailed}`.
+- Обновлена зависимость `github.com/physicist2018/licelfile/v2` до `v2.4.3`.
+
 ## [0.3.5] — 2026-06-02
 
 ### Added

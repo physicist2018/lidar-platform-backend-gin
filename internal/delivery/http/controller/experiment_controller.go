@@ -26,6 +26,7 @@ type ExperimentController struct {
 	GetExperimentChannelsUC       usecase.GetExperimentChannelsUseCase
 	PrepareExperimentUC           usecase.PrepareExperimentUseCase
 	VisualizePreparedExperimentUC usecase.VisualizePreparedExperimentUseCase
+	GluePreparedExperimentUC      usecase.GluePreparedExperimentUseCase
 }
 
 func NewExperimentController(
@@ -36,6 +37,7 @@ func NewExperimentController(
 	getChannels usecase.GetExperimentChannelsUseCase,
 	prepare usecase.PrepareExperimentUseCase,
 	visualize usecase.VisualizePreparedExperimentUseCase,
+	glue usecase.GluePreparedExperimentUseCase,
 ) *ExperimentController {
 	return &ExperimentController{
 		Log:                           log,
@@ -45,6 +47,7 @@ func NewExperimentController(
 		GetExperimentChannelsUC:       getChannels,
 		PrepareExperimentUC:           prepare,
 		VisualizePreparedExperimentUC: visualize,
+		GluePreparedExperimentUC:      glue,
 	}
 }
 
@@ -283,6 +286,51 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 //	@Failure		404			{object}	dto.ErrorResponse	"Not found"
 //	@Failure		500			{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/prepared/{id}/{wavelen}/{photon}/{polarization}/{action} [get]
+//
+// Glue godoc
+//
+//	@Summary		Glue experiment channels
+//	@Description	Starts asynchronous channel gluing for specified wavelengths and altitude range.
+//	@Tags			experiments
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		uint	true	"Experiment ID"
+//	@Param			body	body		dto.GlueExperimentBody	true	"Glue parameters: wavelengths, altitude range h1-h2"
+//	@Success		202		{object}	dto.MessageResponse	"Glue task submitted"
+//	@Failure		400		{object}	dto.ErrorResponse	"Bad request"
+//	@Failure		401		{object}	dto.ErrorResponse	"Unauthorized"
+//	@Failure		409		{object}	dto.ErrorResponse	"Invalid experiment status"
+//	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
+//	@Router			/experiments/{id}/glue [post]
+func (ctrl *ExperimentController) Glue(c *gin.Context) {
+	idStr := c.Param("id")
+	experimentID, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.Error(fmt.Errorf("invalid experiment id: %s", idStr))
+		return
+	}
+
+	var body dto.GlueExperimentBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.Error(err)
+		return
+	}
+
+	if err := ctrl.GluePreparedExperimentUC.Execute(
+		c.Request.Context(),
+		uint(experimentID),
+		body.Wavelengths,
+		body.H1,
+		body.H2,
+	); err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusAccepted, dto.MessageResponse{Message: "glue task submitted"})
+}
+
 func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 	var uri dto.VisualizePreparedExperimentURI
 	if err := c.ShouldBindUri(&uri); err != nil {

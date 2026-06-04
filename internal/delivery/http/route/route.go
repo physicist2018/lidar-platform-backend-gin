@@ -87,6 +87,7 @@ func (rc *RouteConfig) SetupExperimentRoutes(rg *gin.RouterGroup) {
 		adminManager.Use(middleware.AdminOrManager())
 		{
 			adminManager.POST("/:id/prepare", rc.ExperimentController.Prepare)
+			adminManager.POST("/:id/glue", rc.ExperimentController.Glue)
 		}
 
 		// Prepared experiment visualization (admin+manager)

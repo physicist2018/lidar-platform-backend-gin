@@ -5,19 +5,23 @@ import "fmt"
 type PreparedExperimentStatus string
 
 const (
-	PrepStatusStaged    PreparedExperimentStatus = "staged"
-	PrepStatusRemoveBGR PreparedExperimentStatus = "removebgr"
-	PrepStatusCropping  PreparedExperimentStatus = "cropping"
-	PrepStatusDone      PreparedExperimentStatus = "done"
-	PrepStatusFailed    PreparedExperimentStatus = "failed"
+	PrepStatusStaged       PreparedExperimentStatus = "staged"
+	PrepStatusRemoveBGR    PreparedExperimentStatus = "removebgr"
+	PrepStatusCropping     PreparedExperimentStatus = "cropping"
+	PrepStatusDoneStageOne PreparedExperimentStatus = "done stage 1"
+	PrepStatusDoneStageTwo PreparedExperimentStatus = "done stage 2"
+	PrepStatusDone         PreparedExperimentStatus = "done"
+	PrepStatusFailed       PreparedExperimentStatus = "failed"
 )
 
 var validPrepStatuses = map[PreparedExperimentStatus]bool{
-	PrepStatusStaged:    true,
-	PrepStatusRemoveBGR: true,
-	PrepStatusCropping:  true,
-	PrepStatusDone:      true,
-	PrepStatusFailed:    true,
+	PrepStatusStaged:       true,
+	PrepStatusRemoveBGR:    true,
+	PrepStatusCropping:     true,
+	PrepStatusDoneStageOne: true,
+	PrepStatusDoneStageTwo: true,
+	PrepStatusDone:         true,
+	PrepStatusFailed:       true,
 }
 
 func (s PreparedExperimentStatus) IsValid() bool {
@@ -60,11 +64,13 @@ func (e *PreparedExperiment) ValidateTransition(newStatus PreparedExperimentStat
 		return fmt.Errorf("invalid prepared experiment status: %s", newStatus)
 	}
 	allowed := map[PreparedExperimentStatus][]PreparedExperimentStatus{
-		PrepStatusStaged:    {PrepStatusRemoveBGR, PrepStatusFailed},
-		PrepStatusRemoveBGR: {PrepStatusCropping, PrepStatusFailed},
-		PrepStatusCropping:  {PrepStatusDone, PrepStatusFailed},
-		PrepStatusDone:      {},
-		PrepStatusFailed:    {},
+		PrepStatusStaged:       {PrepStatusRemoveBGR, PrepStatusFailed},
+		PrepStatusRemoveBGR:    {PrepStatusCropping, PrepStatusFailed},
+		PrepStatusCropping:     {PrepStatusDone, PrepStatusFailed},
+		PrepStatusDoneStageOne: {PrepStatusDoneStageTwo, PrepStatusFailed},
+		PrepStatusDoneStageTwo: {PrepStatusDoneStageTwo, PrepStatusFailed},
+		PrepStatusDone:         {},
+		PrepStatusFailed:       {},
 	}
 	for _, s := range allowed[e.Status] {
 		if s == newStatus {

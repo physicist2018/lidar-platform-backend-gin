@@ -106,8 +106,9 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	chartRepo := repoImpl.NewExperimentChartRepositoryImpl(chartDataSource, log)
 	prepareExpUC := usecaseImpl.NewPrepareExperimentUseCaseImpl(expRepo, prepRepo, minioClient, workerPool, log)
 	visualizePrepUC := usecaseImpl.NewVisualizePreparedExperimentUseCaseImpl(prepRepo, chartRepo, minioClient, log)
+	gluePrepUC := usecaseImpl.NewGluePreparedExperimentUseCaseImpl(prepRepo, minioClient, workerPool, log)
 
-	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC, prepareExpUC, visualizePrepUC)
+	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC, prepareExpUC, visualizePrepUC, gluePrepUC)
 
 	route.NewRouteConfig(ginEngine, cfg.JWTSecret, userController, authController, expController).Setup()
 
