@@ -286,7 +286,41 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 //	@Failure		404			{object}	dto.ErrorResponse	"Not found"
 //	@Failure		500			{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/prepared/{id}/{wavelen}/{photon}/{polarization}/{action} [get]
-//
+func (ctrl *ExperimentController) Visualize(c *gin.Context) {
+	var uri dto.VisualizePreparedExperimentURI
+	if err := c.ShouldBindUri(&uri); err != nil {
+		c.Error(err)
+		return
+	}
+
+	var query dto.VisualizeTypeQuery
+	_ = c.ShouldBindQuery(&query)
+	if query.Type == "" {
+		query.Type = "svg"
+	}
+	if query.Formula == "" {
+		query.Formula = "raw"
+	}
+
+	url, err := ctrl.VisualizePreparedExperimentUC.Execute(
+		c.Request.Context(),
+		uri.ID,
+		uri.Wavelen,
+		uri.Photon,
+		uri.Polarization,
+		uri.Action,
+		query.Type,
+		query.Formula,
+		query.Regenerate,
+	)
+	if err != nil {
+		c.Error(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.VisualizeChartResponse{URL: url})
+}
+
 // Glue godoc
 //
 //	@Summary		Glue experiment channels
@@ -329,39 +363,4 @@ func (ctrl *ExperimentController) Glue(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusAccepted, dto.MessageResponse{Message: "glue task submitted"})
-}
-
-func (ctrl *ExperimentController) Visualize(c *gin.Context) {
-	var uri dto.VisualizePreparedExperimentURI
-	if err := c.ShouldBindUri(&uri); err != nil {
-		c.Error(err)
-		return
-	}
-
-	var query dto.VisualizeTypeQuery
-	_ = c.ShouldBindQuery(&query)
-	if query.Type == "" {
-		query.Type = "svg"
-	}
-	if query.Formula == "" {
-		query.Formula = "raw"
-	}
-
-	url, err := ctrl.VisualizePreparedExperimentUC.Execute(
-		c.Request.Context(),
-		uri.ID,
-		uri.Wavelen,
-		uri.Photon,
-		uri.Polarization,
-		uri.Action,
-		query.Type,
-		query.Formula,
-		query.Regenerate,
-	)
-	if err != nil {
-		c.Error(err)
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.VisualizeChartResponse{URL: url})
 }

@@ -354,6 +354,76 @@ const docTemplate = `{
                 }
             }
         },
+        "/experiments/{id}/glue": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Starts asynchronous channel gluing for specified wavelengths and altitude range.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "experiments"
+                ],
+                "summary": "Glue experiment channels",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Experiment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Glue parameters: wavelengths, altitude range h1-h2",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.GlueExperimentBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Glue task submitted",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Invalid experiment status",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/experiments/{id}/prepare": {
             "post": {
                 "security": [
@@ -1050,6 +1120,29 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.GlueExperimentBody": {
+            "type": "object",
+            "required": [
+                "h1",
+                "h2",
+                "wavelengths"
+            ],
+            "properties": {
+                "h1": {
+                    "type": "number"
+                },
+                "h2": {
+                    "type": "number"
+                },
+                "wavelengths": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            }
+        },
         "github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest": {
             "type": "object",
             "required": [
@@ -1074,6 +1167,14 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                }
+            }
+        },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
                 }
             }
         },

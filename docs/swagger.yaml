@@ -95,6 +95,22 @@ definitions:
       user_id:
         type: integer
     type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.GlueExperimentBody:
+    properties:
+      h1:
+        type: number
+      h2:
+        type: number
+      wavelengths:
+        items:
+          type: number
+        minItems: 1
+        type: array
+    required:
+    - h1
+    - h2
+    - wavelengths
+    type: object
   github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest:
     properties:
       email:
@@ -112,6 +128,11 @@ definitions:
         type: string
       user:
         $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse'
+    type: object
+  github_com_kshmirko_lidar-platform-go_pkg_dto.MessageResponse:
+    properties:
+      message:
+        type: string
     type: object
   github_com_kshmirko_lidar-platform-go_pkg_dto.PrepareExperimentBody:
     properties:
@@ -437,6 +458,52 @@ paths:
       security:
       - BearerAuth: []
       summary: Get experiment channels
+      tags:
+      - experiments
+  /experiments/{id}/glue:
+    post:
+      consumes:
+      - application/json
+      description: Starts asynchronous channel gluing for specified wavelengths and
+        altitude range.
+      parameters:
+      - description: Experiment ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 'Glue parameters: wavelengths, altitude range h1-h2'
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.GlueExperimentBody'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Glue task submitted
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.MessageResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "409":
+          description: Invalid experiment status
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Glue experiment channels
       tags:
       - experiments
   /experiments/{id}/prepare:
