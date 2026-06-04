@@ -178,10 +178,10 @@ func (u *prepareExperimentUseCaseImpl) preprocess(
 		return
 	}
 
-	// 9. Mark as done
+	// 9. Mark as done stage one
 	if err := u.prepRepo.Update(ctx, &entity.PreparedExperiment{
 		ID:     prepID,
-		Status: entity.PrepStatusDone,
+		Status: entity.PrepStatusDoneStageOne,
 	}); err != nil {
 		log.WithError(err).Error("failed to update status to done")
 		u.setFailed(ctx, prepID, err.Error())

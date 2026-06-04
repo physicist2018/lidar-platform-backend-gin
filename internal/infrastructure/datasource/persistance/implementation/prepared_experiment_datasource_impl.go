@@ -89,7 +89,7 @@ func (d *PreparedExperimentDataSourceImpl) GetByID(ctx context.Context, id uint)
 
 func (d *PreparedExperimentDataSourceImpl) GetByExperimentID(ctx context.Context, experimentID uint) (*entity.PreparedExperiment, error) {
 	var dbExp dbEntity.PreparedExperimentEntity
-	if err := d.DB.WithContext(ctx).Where("experiment_id = ?", experimentID).First(&dbExp).Error; err != nil {
+	if err := d.DB.WithContext(ctx).Where("experiment_id = ?", experimentID).Last(&dbExp).Error; err != nil {
 		return nil, err
 	}
 	exp := toPreparedExperimentDomain(&dbExp)

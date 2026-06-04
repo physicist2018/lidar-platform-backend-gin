@@ -318,9 +318,9 @@ GET /experiments/:id/channels
 ```json
 {
   "channels": [
-    { "wavelen": 355.0, "polarization": "parallel", "isPhoton": 0, "isActive": 1 },
-    { "wavelen": 355.0, "polarization": "cross",    "isPhoton": 0, "isActive": 1 },
-    { "wavelen": 532.0, "polarization": "parallel", "isPhoton": 1, "isActive": 0 },
+    { "wavelen": 355.0, "polarization": "p(arallel)", "isPhoton": 0, "isActive": 1 },
+    { "wavelen": 355.0, "polarization": "s(enkrecht)",    "isPhoton": 0, "isActive": 1 },
+    { "wavelen": 355.0, "polarization": "o(no polaroid)", "isPhoton": 1, "isActive": 0 },
     { "wavelen": 1064.0,"polarization": "parallel", "isPhoton": 0, "isActive": 1 }
   ]
 }
@@ -329,7 +329,7 @@ GET /experiments/:id/channels
 | Поле | Тип | Описание |
 |------|-----|----------|
 | `wavelen` | float64 | Длина волны (нм) |
-| `polarization` | string | Поляризация (`parallel`, `cross` и др.) |
+| `polarization` | string | Поляризация (`p(arallel)`, `s(enkrecht)`, `o(no polaroid)` др.) |
 | `isPhoton` | int | `0` = аналоговый, `1` = фотонный |
 | `isActive` | int | `0` = канал неактивен (нет сигнала), `1` = активен |
 

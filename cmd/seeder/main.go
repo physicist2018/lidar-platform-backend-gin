@@ -35,7 +35,7 @@ func main() {
 	}
 
 	// Hash password
-	hashedPassword, err := hash.Password("admin123")
+	hashedPassword, err := hash.Password("admin2332361")
 	if err != nil {
 		log.Fatalf("failed to hash password: %v", err)
 	}
