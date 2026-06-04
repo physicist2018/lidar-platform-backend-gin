@@ -63,6 +63,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) Execute(
 	outputType string,
 	formula string,
 	regenerate bool,
+	glued int8,
 ) (string, error) {
 	if outputType == "" {
 		outputType = defaultOutputType
@@ -87,7 +88,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) Execute(
 
 	// 2. If not forced regenerate, try to find cached chart in DB
 	if !regenerate {
-		cached, err := u.chartRepo.FindByParams(ctx, experimentID, vizType, formula, wavelen, polarization, isPhoton)
+		cached, err := u.chartRepo.FindByParams(ctx, experimentID, vizType, formula, wavelen, polarization, isPhoton, glued)
 		if err != nil {
 			u.log.WithError(err).Warn("failed to lookup cached chart, will regenerate")
 		}
@@ -116,7 +117,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) Execute(
 	}
 
 	// 5. Extract matching profiles with time metadata
-	profiles := u.extractProfiles(dataPack, isPhoton != 0, wavelen, polarization)
+	profiles := u.extractProfiles(dataPack, isPhoton != 0, wavelen, polarization, glued != 0)
 	if len(profiles) == 0 {
 		return "", fmt.Errorf(
 			"no profiles found for wavelen=%.0f isPhoton=%d polarization=%s",
@@ -153,8 +154,8 @@ func (u *visualizePreparedExperimentUseCaseImpl) Execute(
 		ext = "png"
 	}
 
-	objectPath := fmt.Sprintf("experiments/%d/images/%s-%.0f-%s-%d-%s.%s",
-		experimentID, vizType, wavelen, polarization, isPhoton, formula, ext)
+	objectPath := fmt.Sprintf("experiments/%d/images/%s-%.0f-%d-%s-%d-%s.%s",
+		experimentID, vizType, wavelen, glued, polarization, isPhoton, formula, ext)
 
 	if err := u.minio.UploadBytes(ctx, objectPath, result.Body, result.ContentType); err != nil {
 		return "", fmt.Errorf("upload chart to minio: %w", err)
@@ -167,6 +168,7 @@ func (u *visualizePreparedExperimentUseCaseImpl) Execute(
 		Wavelen:      wavelen,
 		Polarization: polarization,
 		IsPhoton:     isPhoton,
+		Glued:        glued,
 		PathToObject: objectPath,
 	}
 	if err := u.chartRepo.Create(ctx, chart); err != nil {
@@ -183,18 +185,33 @@ func (u *visualizePreparedExperimentUseCaseImpl) extractProfiles(
 	isPhoton bool,
 	wavelen float64,
 	polarization string,
+	glued bool,
 ) []namedProfile {
 	var result []namedProfile
 	for fname, licf := range dataPack.Data {
-		prof, found := licf.SelectProfile(isPhoton, wavelen, polarization)
-		if !found {
-			continue
+		if glued {
+			// Glued mode: select profiles with DeviceID == "BG" and matching wavelength
+			for _, prof := range licf.Profiles {
+				if prof.IsGlued() && prof.Wavelength == wavelen && prof.Polarization == polarization{
+					result = append(result, namedProfile{
+						LicelProfile: prof,
+						StartTime:    float64(licf.MeasurementStartTime.Unix()),
+						Filename:     fname,
+					})
+				}
+			}
+		} else {
+			// Non-glued mode: use existing logic (SelectProfile skips glued profiles internally)
+			prof, found := licf.SelectProfile(isPhoton, wavelen, polarization)
+			if !found {
+				continue
+			}
+			result = append(result, namedProfile{
+				LicelProfile: prof,
+				StartTime:    float64(licf.MeasurementStartTime.Unix()),
+				Filename:     fname,
+			})
 		}
-		result = append(result, namedProfile{
-			LicelProfile: prof,
-			StartTime:    float64(licf.MeasurementStartTime.Unix()),
-			Filename:     fname,
-		})
 	}
 	return result
 }

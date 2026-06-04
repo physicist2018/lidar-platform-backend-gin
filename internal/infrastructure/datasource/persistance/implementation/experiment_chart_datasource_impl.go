@@ -31,6 +31,7 @@ func (d *ExperimentChartDataSourceImpl) Create(ctx context.Context, chart *entit
 		Wavelen:      chart.Wavelen,
 		Polarization: chart.Polarization,
 		IsPhoton:     chart.IsPhoton,
+		Glued:        chart.Glued,
 		PathToObject: chart.PathToObject,
 	}
 	if err := d.DB.WithContext(ctx).Create(dbChart).Error; err != nil {
@@ -48,6 +49,7 @@ func (d *ExperimentChartDataSourceImpl) FindByParams(
 	wavelen float64,
 	polarization string,
 	isPhoton int8,
+	glued int8,
 ) (*entity.ExperimentChart, error) {
 	var dbChart dbEntity.ExperimentChartEntity
 	err := d.DB.WithContext(ctx).
@@ -57,6 +59,7 @@ func (d *ExperimentChartDataSourceImpl) FindByParams(
 		Where("wavelen = ?", wavelen).
 		Where("polarization = ?", polarization).
 		Where("is_photon = ?", isPhoton).
+		Where("glued = ?", glued).
 		First(&dbChart).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -77,6 +80,7 @@ func toChartDomain(dbChart *dbEntity.ExperimentChartEntity) *entity.ExperimentCh
 		Wavelen:      dbChart.Wavelen,
 		Polarization: dbChart.Polarization,
 		IsPhoton:     dbChart.IsPhoton,
+		Glued:        dbChart.Glued,
 		PathToObject: dbChart.PathToObject,
 	}
 }

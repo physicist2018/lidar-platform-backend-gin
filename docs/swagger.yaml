@@ -101,6 +101,8 @@ definitions:
         type: number
       h2:
         type: number
+      polarization:
+        type: string
       wavelengths:
         items:
           type: number
@@ -472,7 +474,7 @@ paths:
         name: id
         required: true
         type: integer
-      - description: 'Glue parameters: wavelengths, altitude range h1-h2'
+      - description: 'Glue parameters: wavelengths, polarization, altitude range h1-h2'
         in: body
         name: body
         required: true
@@ -556,7 +558,7 @@ paths:
       summary: Prepare experiment data
       tags:
       - experiments
-  /prepared/{id}/{wavelen}/{photon}/{polarization}/{action}:
+  /prepared/{id}:
     get:
       description: Generates a heatmap or averaged profile from prepared experiment
         data. Returns a presigned URL to the chart in Minio.
@@ -568,28 +570,35 @@ paths:
         type: integer
       - description: Wavelength
         format: float64
-        in: path
+        in: query
         name: wavelen
         required: true
         type: number
       - description: 'Photon/analog mode: 0=analog, 1=photon'
-        in: path
+        in: query
         name: photon
         required: true
         type: integer
       - description: Polarization
-        in: path
+        in: query
         name: polarization
-        required: true
         type: string
       - description: image or profile
         enum:
         - image
         - profile
-        in: path
+        in: query
         name: action
         required: true
         type: string
+      - default: 0
+        description: 'Glued mode: 0=non-glued (default), 1=glued'
+        enum:
+        - 0
+        - 1
+        in: query
+        name: glued
+        type: integer
       - default: svg
         description: 'Output type: svg, json or png'
         enum:

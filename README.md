@@ -81,15 +81,24 @@ go run ./cmd/app
 | `GET` | `/experiments/:id/channels` | Любая | Список каналов эксперимента (`wavelen`, `polarization`, `isPhoton`, `isActive`) |
 | `POST` | `/experiments` | **admin** | Создать (multipart: `title`, `licelZip`, `licelBgr`, `meteoFile`) |
 | `POST` | `/experiments/:id/prepare` | **admin, manager** | Подготовка данных (JSON: `crop_alt`, `bgr_type`, `bgr_alt`) |
-| `POST` | `/experiments/:id/glue` | **admin, manager** | Склейка каналов (JSON: `wavelengths`, `h1`, `h2`) |
+| `POST` | `/experiments/:id/glue` | **admin, manager** | Склейка каналов (JSON: `wavelengths`, `polarization`, `h1`, `h2`) |
 
 ### Prepared Experiments (требуется аутентификация)
 
 | Метод | Путь | Роль | Описание |
 |---|---|---|---|
-| `GET` | `/prepared/:id/:wavelen/:photon/:polarization/:action` | **admin, manager** | Визуализация: возвращает `{"url"}` — presigned URL на график в MinIO (`?type=svg|json|png&formula=raw|rangecorr|lograngecorr&regenerate=true`) |
+| `GET` | `/prepared/:id` | **admin, manager** | Визуализация: возвращает `{"url"}` — presigned URL на график в MinIO (`?wavelen=...&photon=...&polarization=...&action=...&glued=0|1&type=svg|json|png&formula=...&regenerate=true`) |
 
-> **GET /prepared/:id/:wavelen/:photon/:polarization/:action** — `:action` = `image` (heatmap: X=время, Y=дистанция) или `profile` (усреднённый XY-график). `:wavelen` — длина волны (например `532`), `:photon` — `0` (аналоговый) или `1` (фотонный). `type=svg` (по умолчанию) — SVG-изображение, `type=png` — PNG, `type=json` — Plotly JSON. `formula=raw` — сырой сигнал P, `rangecorr` — P×r², `lograngecorr` — log₁₀(P×r²). `?regenerate=true` — принудительная перерисовка в обход кеша. Ответ — `{"url": "https://minio/..."}`, presigned URL действителен 1 час.
+> **GET /prepared/:id** — все параметры query:
+> - `wavelen` (float64, required) — длина волны, например `532`
+> - `photon` (int, required) — `0` (аналоговый) или `1` (фотонный)
+> - `polarization` (string) — поляризация
+> - `action` (string, required) — `image` (heatmap: X=время, Y=дистанция) или `profile` (усреднённый XY-график)
+> - `glued` (int) — `0` (не-склеенные, default) или `1` (склеенные профили DeviceID=BG)
+> - `type` (string) — `svg` (default), `png`, `json`
+> - `formula` (string) — `raw` (default), `rangecorr`, `lograngecorr`
+> - `regenerate` (bool) — принудительная перерисовка в обход кеша
+> Ответ: `{"url": "https://minio/..."}`, presigned URL действителен 1 час.
 
 > **POST /experiments** — возвращает `201` сразу со статусом `staged`. Препроцессинг (парсинг licel zip, загрузка в Minio) выполняется асинхронно в worker pool. Статус обновляется: `staged → uploading → done|failed`.
 

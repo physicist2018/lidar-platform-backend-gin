@@ -43,6 +43,7 @@ func (u *gluePreparedExperimentUseCaseImpl) Execute(
 	ctx context.Context,
 	experimentID uint,
 	wavelengths []float64,
+	polarization string,
 	h1, h2 float64,
 ) error {
 	// Find PreparedExperiment by ExperimentID
@@ -62,13 +63,14 @@ func (u *gluePreparedExperimentUseCaseImpl) Execute(
 	prepID := prep.ID
 
 	u.workerPool.Submit(func() {
-		u.glueProcess(prepID, experimentID, prep.PathToData, wavelengths, h1, h2)
+		u.glueProcess(prepID, experimentID, prep.PathToData, wavelengths, polarization, h1, h2)
 	})
 
 	u.log.WithFields(logrus.Fields{
 		"prepared_experiment_id": prepID,
 		"experiment_id":          experimentID,
 		"wavelengths":            wavelengths,
+		"polarization":           polarization,
 		"h1":                     h1,
 		"h2":                     h2,
 	}).Info("glue task submitted to worker pool")
@@ -80,6 +82,7 @@ func (u *gluePreparedExperimentUseCaseImpl) glueProcess(
 	prepID, experimentID uint,
 	pathToData string,
 	wavelengths []float64,
+	polarization string,
 	h1, h2 float64,
 ) {
 	ctx := context.Background()
@@ -111,7 +114,7 @@ func (u *gluePreparedExperimentUseCaseImpl) glueProcess(
 
 	// 3. For each wavelength, perform glue
 	for _, wvl := range wavelengths {
-		if err := dataPack.Glue(wvl, h1, h2); err != nil {
+		if err := dataPack.Glue(wvl, h1, h2, polarization); err != nil {
 			log.WithFields(logrus.Fields{
 				"wavelength": wvl,
 				"h1":         h1,

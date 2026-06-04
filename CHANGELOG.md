@@ -2,22 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.1.0] — 2026-06-04
+## [1.2.0] — 2026-06-04
 
 ### Added
 
-- **Склейка аналогового и фотонного каналов** — новый эндпоинт `POST /experiments/:id/glue`.
-  - Тело запроса: `{"wavelengths": [...], "h1": ..., "h2": ...}`.
-  - Статус PreparedExperiment должен быть `PrepStatusDoneStageOne` или `PrepStatusDoneStageTwo`, иначе ошибка `400`.
-  - Для каждой длины волны вызывается `licelformat.LicelPack.Glue(wvl, h1, h2)` — находит аналоговый (`DeviceID=BT`) и фотонный (`DeviceID=BC`) профили, вычисляет коэффициент склейки на интервале [h1;h2], создаёт склеенный профиль (`DeviceID=BG`).
-  - Асинхронный запуск через worker pool, ответ `202 Accepted {"message": "glue task submitted"}`.
-  - Успех → статус `PrepStatusDoneStageTwo`, ошибка → `PrepStatusFailed`.
-  - Повторный glue для тех же длин волн заменяет старые склеенные профили (апдейт).
+- **Параметр `glued` в визуализацию** — `GET /prepared/:id?wavelen=...&photon=...&polarization=...&action=...&glued=0|1`.
+  - `glued=0` (default) — профили выбираются как раньше (не-склеенные).
+  - `glued=1` — выбираются только склеенные профили (DeviceID=BG) для заданной длины волны.
+- **Параметр `polarization` в склейку** — `POST /experiments/:id/glue` теперь принимает опциональный `{"polarization": "..."}`.
+  - Передаётся в `licelformat.LicelPack.Glue(wvl, h1, h2, polarization)` — склейка выполняется только для профилей указанной поляризации.
+- **Поле `Glued` в `ExperimentChart`** — кеш визуализации различает glued/non-glued запросы.
 
 ### Changed
 
-- **Статусная модель PreparedExperiment** — разрешён переход `PrepStatusDoneStageOne → {PrepStatusDoneStageTwo, PrepStatusFailed}` и повторный `PrepStatusDoneStageTwo → {PrepStatusDoneStageTwo, PrepStatusFailed}`.
-- Обновлена зависимость `github.com/physicist2018/licelfile/v2` до `v2.4.3`.
+- **Маршрут визуализации** — `GET /prepared/{id}/{wavelen}/{photon}/{polarization}/{action}` → `GET /prepared/{id}`. Все параметры (кроме `id`) — query-параметры.
+- Обновлена зависимость `github.com/physicist2018/licelfile/v2` до `v2.4.4`.
 
 ## [0.3.5] — 2026-06-02
 

@@ -375,7 +375,7 @@
                         "required": true
                     },
                     {
-                        "description": "Glue parameters: wavelengths, altitude range h1-h2",
+                        "description": "Glue parameters: wavelengths, polarization, altitude range h1-h2",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -494,7 +494,7 @@
                 }
             }
         },
-        "/prepared/{id}/{wavelen}/{photon}/{polarization}/{action}": {
+        "/prepared/{id}": {
             "get": {
                 "security": [
                     {
@@ -522,22 +522,21 @@
                         "format": "float64",
                         "description": "Wavelength",
                         "name": "wavelen",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "integer",
                         "description": "Photon/analog mode: 0=analog, 1=photon",
                         "name": "photon",
-                        "in": "path",
+                        "in": "query",
                         "required": true
                     },
                     {
                         "type": "string",
                         "description": "Polarization",
                         "name": "polarization",
-                        "in": "path",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "enum": [
@@ -547,8 +546,19 @@
                         "type": "string",
                         "description": "image or profile",
                         "name": "action",
-                        "in": "path",
+                        "in": "query",
                         "required": true
+                    },
+                    {
+                        "enum": [
+                            0,
+                            1
+                        ],
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Glued mode: 0=non-glued (default), 1=glued",
+                        "name": "glued",
+                        "in": "query"
                     },
                     {
                         "enum": [
@@ -1127,6 +1137,9 @@
                 },
                 "h2": {
                     "type": "number"
+                },
+                "polarization": {
+                    "type": "string"
                 },
                 "wavelengths": {
                     "type": "array",

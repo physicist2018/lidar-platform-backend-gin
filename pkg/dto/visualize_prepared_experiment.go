@@ -2,18 +2,19 @@ package dto
 
 // VisualizePreparedExperimentURI binds path parameters for the visualize endpoint.
 type VisualizePreparedExperimentURI struct {
-	ID           uint    `uri:"id" binding:"required,min=1"`
-	Wavelen      float64 `uri:"wavelen" binding:"required"`
-	Photon       int8    `uri:"photon" binding:"required"`
-	Polarization string  `uri:"polarization"`
-	Action       string  `uri:"action" binding:"required,oneof=image profile"`
+	ID uint `uri:"id" binding:"required,min=1"`
 }
 
-// VisualizeTypeQuery binds the type, formula and regenerate query parameters.
-type VisualizeTypeQuery struct {
-	Type       string `form:"type"`
-	Formula    string `form:"formula"`
-	Regenerate bool   `form:"regenerate"`
+// VisualizePreparedExperimentQuery binds all query parameters for the visualize endpoint.
+type VisualizePreparedExperimentQuery struct {
+	Wavelen      float64 `form:"wavelen" binding:"required"`
+	Photon       int8    `form:"photon" binding:"required"`
+	Polarization string  `form:"polarization"`
+	Action       string  `form:"action" binding:"required,oneof=image profile"`
+	Glued        int8    `form:"glued"`   // 0 = non-glued (default), 1 = glued profiles only
+	Type         string  `form:"type"`    // svg, json, or png
+	Formula      string  `form:"formula"` // raw, rangecorr, lograngecorr
+	Regenerate   bool    `form:"regenerate"`
 }
 
 // VisualizeChartResponse is returned by the visualize endpoint with the chart URL.

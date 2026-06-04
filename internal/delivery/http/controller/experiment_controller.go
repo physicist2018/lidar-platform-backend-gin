@@ -273,10 +273,11 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 //	@Produce		json
 //	@Security		BearerAuth
 //	@Param			id			path		uint	true	"Prepared experiment ID"
-//	@Param			wavelen		path		float64	true	"Wavelength"
-//	@Param			photon		path		int		true	"Photon/analog mode: 0=analog, 1=photon"
-//	@Param			polarization	path		string	true	"Polarization"
-//	@Param			action		path		string	true	"image or profile"	Enums(image, profile)
+//	@Param			wavelen		query		float64	true	"Wavelength"
+//	@Param			photon		query		int		true	"Photon/analog mode: 0=analog, 1=photon"
+//	@Param			polarization	query		string	false	"Polarization"
+//	@Param			action		query		string	true	"image or profile"	Enums(image, profile)
+//	@Param			glued		query		int		false	"Glued mode: 0=non-glued (default), 1=glued"	Enums(0, 1)	default(0)
 //	@Param			type		query		string	false	"Output type: svg, json or png"	Enums(svg, json, png)	default(svg)
 //	@Param			formula		query		string	false	"Signal formula: raw, rangecorr, lograngecorr"	Enums(raw, rangecorr, lograngecorr)	default(raw)
 //	@Param			regenerate	query		bool	false	"Force regeneration, ignoring cache"	default(false)
@@ -285,7 +286,7 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 //	@Failure		401			{object}	dto.ErrorResponse	"Unauthorized"
 //	@Failure		404			{object}	dto.ErrorResponse	"Not found"
 //	@Failure		500			{object}	dto.ErrorResponse	"Internal server error"
-//	@Router			/prepared/{id}/{wavelen}/{photon}/{polarization}/{action} [get]
+//	@Router			/prepared/{id} [get]
 func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 	var uri dto.VisualizePreparedExperimentURI
 	if err := c.ShouldBindUri(&uri); err != nil {
@@ -293,8 +294,11 @@ func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 		return
 	}
 
-	var query dto.VisualizeTypeQuery
-	_ = c.ShouldBindQuery(&query)
+	var query dto.VisualizePreparedExperimentQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		c.Error(err)
+		return
+	}
 	if query.Type == "" {
 		query.Type = "svg"
 	}
@@ -305,13 +309,14 @@ func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 	url, err := ctrl.VisualizePreparedExperimentUC.Execute(
 		c.Request.Context(),
 		uri.ID,
-		uri.Wavelen,
-		uri.Photon,
-		uri.Polarization,
-		uri.Action,
+		query.Wavelen,
+		query.Photon,
+		query.Polarization,
+		query.Action,
 		query.Type,
 		query.Formula,
 		query.Regenerate,
+		query.Glued,
 	)
 	if err != nil {
 		c.Error(err)
@@ -330,7 +335,7 @@ func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 //	@Produce		json
 //	@Security		BearerAuth
 //	@Param			id		path		uint	true	"Experiment ID"
-//	@Param			body	body		dto.GlueExperimentBody	true	"Glue parameters: wavelengths, altitude range h1-h2"
+//	@Param			body	body		dto.GlueExperimentBody	true	"Glue parameters: wavelengths, polarization, altitude range h1-h2"
 //	@Success		202		{object}	dto.MessageResponse	"Glue task submitted"
 //	@Failure		400		{object}	dto.ErrorResponse	"Bad request"
 //	@Failure		401		{object}	dto.ErrorResponse	"Unauthorized"
@@ -355,6 +360,7 @@ func (ctrl *ExperimentController) Glue(c *gin.Context) {
 		c.Request.Context(),
 		uint(experimentID),
 		body.Wavelengths,
+		body.Polarization,
 		body.H1,
 		body.H2,
 	); err != nil {

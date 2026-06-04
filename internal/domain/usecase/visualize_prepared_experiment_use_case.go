@@ -19,5 +19,6 @@ type VisualizePreparedExperimentUseCase interface {
 		outputType string,
 		formula string,
 		regenerate bool,
+		glued int8,
 	) (string, error) // returns presigned Minio URL
 }

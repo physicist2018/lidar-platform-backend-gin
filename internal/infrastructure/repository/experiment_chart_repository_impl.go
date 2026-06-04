@@ -37,9 +37,10 @@ func (r *ExperimentChartRepositoryImpl) FindByParams(
 	wavelen float64,
 	polarization string,
 	isPhoton int8,
+	glued int8,
 ) (*entity.ExperimentChart, error) {
 	op := "ExperimentChartRepository.FindByParams"
-	chart, err := r.DataSource.FindByParams(ctx, experimentID, chartType, formula, wavelen, polarization, isPhoton)
+	chart, err := r.DataSource.FindByParams(ctx, experimentID, chartType, formula, wavelen, polarization, isPhoton, glued)
 	if err != nil {
 		return nil, response.InternalError(op, err)
 	}

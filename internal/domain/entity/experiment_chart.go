@@ -9,5 +9,6 @@ type ExperimentChart struct {
 	Wavelen      float64 `json:"wavelen"`
 	Polarization string  `json:"polarization"`
 	IsPhoton     int8    `json:"is_photon"`      // 0=analog, 1=photon
+	Glued        int8    `json:"glued"`          // 0=non-glued, 1=glued
 	PathToObject string  `json:"path_to_object"` // Minio object path
 }
