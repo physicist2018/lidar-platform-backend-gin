@@ -274,11 +274,11 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 //	@Security		BearerAuth
 //	@Param			id			path		uint	true	"Prepared experiment ID"
 //	@Param			wavelen		query		float64	true	"Wavelength"
-//	@Param			photon		query		int		true	"Photon/analog mode: 0=analog, 1=photon"
-//	@Param			polarization	query		string	false	"Polarization"
+//	@Param			photon		query		int		false	"Photon/analog mode: 0=analog (default), 1=photon; ignored when glued=1"	default(0)
+//	@Param			polarization	query		string	false	"Polarization"	default(o)
 //	@Param			action		query		string	true	"image or profile"	Enums(image, profile)
 //	@Param			glued		query		int		false	"Glued mode: 0=non-glued (default), 1=glued"	Enums(0, 1)	default(0)
-//	@Param			type		query		string	false	"Output type: svg, json or png"	Enums(svg, json, png)	default(svg)
+//	@Param			type		query		string	false	"Output type: png, svg or json"	Enums(png, svg, json)	default(png)
 //	@Param			formula		query		string	false	"Signal formula: raw, rangecorr, lograngecorr"	Enums(raw, rangecorr, lograngecorr)	default(raw)
 //	@Param			regenerate	query		bool	false	"Force regeneration, ignoring cache"	default(false)
 //	@Success		200			{object}	dto.VisualizeChartResponse
@@ -300,10 +300,13 @@ func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 		return
 	}
 	if query.Type == "" {
-		query.Type = "svg"
+		query.Type = "png"
 	}
 	if query.Formula == "" {
 		query.Formula = "raw"
+	}
+	if query.Polarization == "" {
+		query.Polarization = "o"
 	}
 
 	url, err := ctrl.VisualizePreparedExperimentUC.Execute(

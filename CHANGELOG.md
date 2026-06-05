@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0] — 2026-06-04
+## [1.2.0] — 2026-06-05
 
 ### Added
 
@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **Маршрут визуализации** — `GET /prepared/{id}/{wavelen}/{photon}/{polarization}/{action}` → `GET /prepared/{id}`. Все параметры (кроме `id`) — query-параметры.
+- **Параметры визуализации** — `photon` теперь опционален (default `0`), `polarization` default `o`, `type` default `png` вместо `svg`.
 - Обновлена зависимость `github.com/physicist2018/licelfile/v2` до `v2.4.4`.
 
 ## [0.3.5] — 2026-06-02

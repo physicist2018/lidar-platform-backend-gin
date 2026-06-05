@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultOutputType = "svg"
+	defaultOutputType = "png"
 	presignExpiry     = 1 * time.Hour
 )
 
@@ -145,17 +145,8 @@ func (u *visualizePreparedExperimentUseCaseImpl) Execute(
 	}
 
 	// 7. Upload to Minio and save record to DB
-	ext := outputType
-	if ext == "svg" {
-		ext = "svg"
-	} else if ext == "json" {
-		ext = "json"
-	} else if ext == "png" {
-		ext = "png"
-	}
-
 	objectPath := fmt.Sprintf("experiments/%d/images/%s-%.0f-%d-%s-%d-%s.%s",
-		experimentID, vizType, wavelen, glued, polarization, isPhoton, formula, ext)
+		experimentID, vizType, wavelen, glued, polarization, isPhoton, formula, outputType)
 
 	if err := u.minio.UploadBytes(ctx, objectPath, result.Body, result.ContentType); err != nil {
 		return "", fmt.Errorf("upload chart to minio: %w", err)

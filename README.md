@@ -87,15 +87,15 @@ go run ./cmd/app
 
 | Метод | Путь | Роль | Описание |
 |---|---|---|---|
-| `GET` | `/prepared/:id` | **admin, manager** | Визуализация: возвращает `{"url"}` — presigned URL на график в MinIO (`?wavelen=...&photon=...&polarization=...&action=...&glued=0|1&type=svg|json|png&formula=...&regenerate=true`) |
+| `GET` | `/prepared/:id` | **admin, manager** | Визуализация: возвращает `{"url"}` — presigned URL на график в MinIO (`?wavelen=...&photon=...&polarization=...&action=...&glued=0|1&type=png|svg|json&formula=...&regenerate=true`) |
 
 > **GET /prepared/:id** — все параметры query:
 > - `wavelen` (float64, required) — длина волны, например `532`
-> - `photon` (int, required) — `0` (аналоговый) или `1` (фотонный)
-> - `polarization` (string) — поляризация
+> - `photon` (int) — `0` (аналоговый, default) или `1` (фотонный); игнорируется при `glued=1`
+> - `polarization` (string) — поляризация (default: `o`)
 > - `action` (string, required) — `image` (heatmap: X=время, Y=дистанция) или `profile` (усреднённый XY-график)
 > - `glued` (int) — `0` (не-склеенные, default) или `1` (склеенные профили DeviceID=BG)
-> - `type` (string) — `svg` (default), `png`, `json`
+> - `type` (string) — `png` (default), `svg`, `json`
 > - `formula` (string) — `raw` (default), `rangecorr`, `lograngecorr`
 > - `regenerate` (bool) — принудительная перерисовка в обход кеша
 > Ответ: `{"url": "https://minio/..."}`, presigned URL действителен 1 час.
