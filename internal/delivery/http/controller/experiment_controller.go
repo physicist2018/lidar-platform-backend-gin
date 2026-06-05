@@ -12,6 +12,7 @@ import (
 	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/middleware"
 	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
 	"github.com/kshmirko/lidar-platform-go/internal/domain/usecase"
+	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/queue"
 	"github.com/kshmirko/lidar-platform-go/internal/utils/mapper"
 	"github.com/kshmirko/lidar-platform-go/pkg/dto"
 )
@@ -27,6 +28,7 @@ type ExperimentController struct {
 	PrepareExperimentUC           usecase.PrepareExperimentUseCase
 	VisualizePreparedExperimentUC usecase.VisualizePreparedExperimentUseCase
 	GluePreparedExperimentUC      usecase.GluePreparedExperimentUseCase
+	TaskStore                     *queue.TaskStore
 }
 
 func NewExperimentController(
@@ -38,6 +40,7 @@ func NewExperimentController(
 	prepare usecase.PrepareExperimentUseCase,
 	visualize usecase.VisualizePreparedExperimentUseCase,
 	glue usecase.GluePreparedExperimentUseCase,
+	taskStore *queue.TaskStore,
 ) *ExperimentController {
 	return &ExperimentController{
 		Log:                           log,
@@ -48,6 +51,7 @@ func NewExperimentController(
 		PrepareExperimentUC:           prepare,
 		VisualizePreparedExperimentUC: visualize,
 		GluePreparedExperimentUC:      glue,
+		TaskStore:                     taskStore,
 	}
 }
 
@@ -267,8 +271,8 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 
 // Visualize godoc
 //
-//	@Summary		Visualize prepared experiment data
-//	@Description	Generates a heatmap or averaged profile from prepared experiment data. Returns a presigned URL to the chart in Minio.
+//	@Summary		Visualize prepared experiment data (async)
+//	@Description	Enqueues a chart generation task (heatmap or profile) and returns a task ID for polling. Poll /tasks/{taskID} for the result.
 //	@Tags			experiments
 //	@Produce		json
 //	@Security		BearerAuth
@@ -281,7 +285,7 @@ func (ctrl *ExperimentController) Prepare(c *gin.Context) {
 //	@Param			type		query		string	false	"Output type: png, svg or json"	Enums(png, svg, json)	default(png)
 //	@Param			formula		query		string	false	"Signal formula: raw, rangecorr, lograngecorr"	Enums(raw, rangecorr, lograngecorr)	default(raw)
 //	@Param			regenerate	query		bool	false	"Force regeneration, ignoring cache"	default(false)
-//	@Success		200			{object}	dto.VisualizeChartResponse
+//	@Success		202			{object}	dto.VisualizeChartResponse
 //	@Failure		400			{object}	dto.ErrorResponse	"Bad request"
 //	@Failure		401			{object}	dto.ErrorResponse	"Unauthorized"
 //	@Failure		404			{object}	dto.ErrorResponse	"Not found"
@@ -309,7 +313,7 @@ func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 		query.Polarization = "o"
 	}
 
-	url, err := ctrl.VisualizePreparedExperimentUC.Execute(
+	taskInfo, err := ctrl.VisualizePreparedExperimentUC.Execute(
 		c.Request.Context(),
 		uri.ID,
 		query.Wavelen,
@@ -326,7 +330,43 @@ func (ctrl *ExperimentController) Visualize(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.VisualizeChartResponse{URL: url})
+	c.JSON(http.StatusAccepted, dto.VisualizeChartResponse{
+		TaskID: taskInfo.TaskID,
+		Status: "accepted",
+	})
+}
+
+// GetTaskStatus godoc
+//
+//	@Summary		Poll async task status
+//	@Description	Returns the current status of an async task (pending, processing, done, failed). When done, includes the presigned chart URL.
+//	@Tags			tasks
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			taskID	path		string	true	"Task ID returned by /prepared/{id}"
+//	@Success		200		{object}	dto.TaskStatusResponse
+//	@Failure		404		{object}	dto.ErrorResponse	"Task not found"
+//	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
+//	@Router			/tasks/{taskID} [get]
+func (ctrl *ExperimentController) GetTaskStatus(c *gin.Context) {
+	taskID := c.Param("taskID")
+	if taskID == "" {
+		c.Error(fmt.Errorf("taskID is required"))
+		return
+	}
+
+	res, err := ctrl.TaskStore.Get(c.Request.Context(), taskID)
+	if err != nil {
+		c.Error(fmt.Errorf("task %s not found: %w", taskID, err))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.TaskStatusResponse{
+		TaskID: taskID,
+		Status: res.Status,
+		URL:    res.URL,
+		Error:  res.Error,
+	})
 }
 
 // Glue godoc

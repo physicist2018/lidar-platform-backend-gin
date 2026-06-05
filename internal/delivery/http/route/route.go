@@ -48,6 +48,7 @@ func (rc *RouteConfig) Setup() {
 	{
 		rc.SetupUserRoutes(protected)
 		rc.SetupExperimentRoutes(protected)
+		rc.SetupTaskRoutes(protected)
 	}
 }
 
@@ -66,6 +67,10 @@ func (rc *RouteConfig) SetupUserRoutes(rg *gin.RouterGroup) {
 			admin.DELETE("/:id", rc.UserController.Delete)
 		}
 	}
+}
+
+func (rc *RouteConfig) SetupTaskRoutes(rg *gin.RouterGroup) {
+	rg.GET("/tasks/:taskID", rc.ExperimentController.GetTaskStatus)
 }
 
 func (rc *RouteConfig) SetupExperimentRoutes(rg *gin.RouterGroup) {

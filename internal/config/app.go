@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hibiken/asynq"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"gorm.io/gorm"
@@ -17,6 +18,7 @@ import (
 	cacheImpl "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/cache/implementation"
 	dsImpl "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/persistance/implementation"
 	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/db"
+	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/queue"
 	repoImpl "github.com/kshmirko/lidar-platform-go/internal/infrastructure/repository"
 	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/storage"
 	"github.com/kshmirko/lidar-platform-go/internal/utils/auth"
@@ -29,7 +31,7 @@ type BootstrapConfig struct {
 	Log             *logrus.Logger
 	CacheTTLDefault time.Duration
 	GinEngine       *gin.Engine
-	WorkerPool      *worker.Pool
+	WorkerPool      *worker.Pool // kept for transition period
 }
 
 // Initialize builds the full dependency graph.
@@ -56,13 +58,22 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 		return nil, fmt.Errorf("initialize minio: %w", err)
 	}
 
-	// Worker pool
+	// Legacy worker pool (kept for transition period)
 	maxWorkers := cfg.MaxWorkers
 	if maxWorkers <= 0 {
 		maxWorkers = 4
 	}
 	workerPool := worker.NewPool(maxWorkers, log)
 	workerPool.Start(maxWorkers)
+
+	// Asynq client & task store
+	redisOpt := asynq.RedisClientOpt{
+		Addr:     cfg.RedisAddress,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+	}
+	queueClient := queue.NewClient(redisOpt, log)
+	taskStore := queue.NewTaskStore(redisConn)
 
 	ginEngine := gin.Default()
 	ginEngine.Use(otelgin.Middleware("lidar-platform"))
@@ -102,13 +113,12 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	// --- Wire PreparedExperiment domain ---
 	prepDataSource := dsImpl.NewPreparedExperimentDataSourceImpl(dbConn, log)
 	prepRepo := repoImpl.NewPreparedExperimentRepositoryImpl(prepDataSource, log)
-	chartDataSource := dsImpl.NewExperimentChartDataSourceImpl(dbConn, log)
-	chartRepo := repoImpl.NewExperimentChartRepositoryImpl(chartDataSource, log)
-	prepareExpUC := usecaseImpl.NewPrepareExperimentUseCaseImpl(expRepo, prepRepo, minioClient, workerPool, log)
-	visualizePrepUC := usecaseImpl.NewVisualizePreparedExperimentUseCaseImpl(prepRepo, chartRepo, minioClient, log)
-	gluePrepUC := usecaseImpl.NewGluePreparedExperimentUseCaseImpl(prepRepo, minioClient, workerPool, log)
+	// Use asynq-based use cases
+	prepareExpUC := usecaseImpl.NewPrepareExperimentUseCaseImpl(expRepo, prepRepo, queueClient, log)
+	visualizePrepUC := usecaseImpl.NewVisualizePreparedExperimentUseCaseImpl(queueClient, log)
+	gluePrepUC := usecaseImpl.NewGluePreparedExperimentUseCaseImpl(prepRepo, queueClient, log)
 
-	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC, prepareExpUC, visualizePrepUC, gluePrepUC)
+	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC, prepareExpUC, visualizePrepUC, gluePrepUC, taskStore)
 
 	route.NewRouteConfig(ginEngine, cfg.JWTSecret, userController, authController, expController).Setup()
 

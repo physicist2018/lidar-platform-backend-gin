@@ -2,12 +2,12 @@ package usecase
 
 import "context"
 
-// VisualizeResult holds the generated visualization data.
-type VisualizeResult struct {
-	ContentType string
-	Body        []byte
+// AsyncTaskInfo holds the result of an async task submission.
+type AsyncTaskInfo struct {
+	TaskID string `json:"task_id"`
 }
 
+// VisualizePreparedExperimentUseCase enqueues a visualization task and returns the task ID for polling.
 type VisualizePreparedExperimentUseCase interface {
 	Execute(
 		ctx context.Context,
@@ -20,5 +20,5 @@ type VisualizePreparedExperimentUseCase interface {
 		formula string,
 		regenerate bool,
 		glued int8,
-	) (string, error) // returns presigned Minio URL
+	) (*AsyncTaskInfo, error) // returns task ID for polling
 }

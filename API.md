@@ -387,36 +387,73 @@ POST /experiments/:id/prepare
 
 > ⚡ Статусная машина: `staged → removebgr → cropping → done` (или `failed`). После завершения `path_to_data` содержит путь к обработанному zip в MinIO.
 
-**Мониторинг:** проверяйте статус через `GET /experiments/:id` (поле `status` эксперимента не меняется — следить через `GET` подготовленного эксперимента пока не реализован отдельный эндпоинт).
+
 
 ---
 
-## 5. Визуализация (Visualize)
+## 4.1. Склейка каналов (Glue)
 
 > 🔒 **Роль:** `admin` или `manager`
 
-Генерирует heatmap или усреднённый профиль по подготовленным данным. Результат кешируется в MinIO и возвращается в виде presigned URL.
+Склеивает аналоговый и фотонный каналы для указанных длин волн. Асинхронная операция — ответ `202 Accepted`.
 
 ```
-GET /prepared/:id/:wavelen/:photon/:polarization/:action
+POST /experiments/:id/glue
 ```
 
-### Параметры пути
+**Тело запроса:**
 
-| Параметр | Тип | Пример | Описание |
-|----------|-----|--------|----------|
-| `:id` | uint | `10` | ID подготовленного эксперимента |
-| `:wavelen` | float64 | `532` | Длина волны (нм) |
-| `:photon` | int | `0` | `0` = аналоговый, `1` = фотонный |
-| `:polarization` | string | `parallel` | Поляризация |
-| `:action` | string | `image` | Тип визуализации: `image` или `profile` |
+```json
+{
+  "wavelengths": [355, 532, 1064],
+  "polarization": "p",
+  "h1": 200.0,
+  "h2": 4000.0
+}
+```
+
+| Поле | Тип | Обязательно | Описание |
+|------|-----|-------------|----------|
+| `wavelengths` | []float64 | ✅ | Длины волн для склейки |
+| `polarization` | string | ✅ | Поляризация |
+| `h1` | float64 | ✅ | Начальная высота склейки (м) |
+| `h2` | float64 | ✅ | Конечная высота склейки (м) |
+
+**Ответ `202`:**
+
+```json
+{
+  "message": "glue task submitted"
+}
+```
+
+**Статус prepared после glue:** `done stage 1 → done stage 2` (или `failed` при ошибке).
+
+Проверить статус можно через `GET /experiments/:id` — prepared-запись связана с экспериментом.
+
+---
+
+## 5. Визуализация (Visualize) — асинхронная
+
+> 🔒 **Роль:** `admin` или `manager`
+
+Генерирует heatmap или усреднённый профиль по подготовленным данным. Визуализация выполняется **асинхронно** в воркере. Эндпоинт возвращает `task_id` для опроса готовности.
+
+```
+GET /prepared/:id?wavelen=...&polarization=...&action=...
+```
 
 ### Query-параметры
 
 | Параметр | Тип | По умолчанию | Описание |
 |----------|-----|-------------|----------|
-| `type` | string | `svg` | Формат вывода: `svg`, `png`, `json` |
-| `formula` | string | `raw` | Формула сигнала |
+| `wavelen` | float64 | **required** | Длина волны, например `532` |
+| `photon` | int | `0` | `0` = аналоговый, `1` = фотонный; игнорируется при `glued=1` |
+| `polarization` | string | `o` | Поляризация |
+| `action` | string | **required** | Тип: `image` (heatmap) или `profile` (усреднённый профиль). `oneof(image,profile)` |
+| `glued` | int | `0` | `0` = не-склеенные, `1` = склеенные профили |
+| `type` | string | `png` | Формат: `png`, `svg`, `json` |
+| `formula` | string | `raw` | Формула сигнала (см. таблицу ниже) |
 | `regenerate` | bool | `false` | `true` — перерисовать в обход кеша |
 
 **`formula` — формулы сигнала:**
@@ -427,41 +464,82 @@ GET /prepared/:id/:wavelen/:photon/:polarization/:action
 | `rangecorr` | P × r² | Коррекция на расстояние |
 | `lograngecorr` | log₁₀(P × r²) | Логарифмическая коррекция |
 
-### Ответ `200`:
+### Ответ `202 Accepted`:
 
 ```json
 {
-  "url": "http://minio:9000/lidar-experiments/experiments/42/images/image-532.0-parallel-0-raw.svg?X-Amz-Algorithm=AWS4-HMAC-SHA256&..."
+  "task_id": "asynq_task_uuid",
+  "status": "accepted"
 }
 ```
 
-> ⏰ Presigned URL действителен **1 час**. После истечения нужно запросить заново.
+> ⚡ Визуализация теперь асинхронная. Используйте полученный `task_id` для опроса `GET /tasks/:taskID` (см. раздел 5.1).
+
+### 5.1. Polling статуса задачи
+
+```
+GET /tasks/:taskID
+```
+
+| Код | Ответ | Описание |
+|-----|-------|----------|
+| `200` | `{"task_id": "...", "status": "pending"}` | Задача в очереди, ещё не начала выполняться |
+| `200` | `{"task_id": "...", "status": "processing"}` | Воркер обрабатывает задачу |
+| `200` | `{"task_id": "...", "status": "done", "url": "https://minio/...."}` | ✅ Готово. `url` — presigned URL на график в MinIO |
+| `200` | `{"task_id": "...", "status": "failed", "error": "..."}` | ❌ Ошибка. `error` содержит описание причины |
+| `404` | `{"error": "Not Found", "message": "task ... not found"}` | Задача не найдена (возможно истёк TTL — 1 час) |
+
+> ⏰ Presigned URL действителен **1 час**. После истечения нужно вызвать `GET /prepared/:id` заново.
 >
-> 💾 При `regenerate=false` (по умолчанию) график **не пересчитывается**, если уже был построен с такими параметрами — возвращается кешированный URL.
-
-### Кеширование
-
-Записи о построенных графиках хранятся в таблице `experiment_charts`. Ключ кеша: `(experiment_id, chart_type, formula, wavelen, polarization, is_photon)`. Файлы в MinIO: `experiments/{id}/images/{action}-{wavelen}-{polarization}-{photon}-{formula}.{ext}`.
+> 💾 Кеширование: готовые графики сохраняются в MinIO и БД (таблица `experiment_charts`). Повторный запрос с теми же параметрами (при `regenerate=false`) вернёт кешированный результат.
 
 ### Примеры запросов
 
 ```bash
-# Heatmap, SVG, raw signal (первый запрос — построит и закеширует)
-curl "http://lidarbaclup.dvo.ru:18080/prepared/10/532/0/parallel/image?type=svg&formula=raw" \
-  -H "Authorization: Bearer <token>"
+# 1. Запрос визуализации — получаем task_id
+TASK_ID=$(curl -s "http://lidarbaclup.dvo.ru:18080/prepared/10?wavelen=532&polarization=p&action=image&type=png&formula=raw" \
+  -H "Authorization: Bearer <token>" | jq -r '.task_id')
+
+# 2. Polling до готовности
+while true; do
+  RESP=$(curl -s "http://lidarbaclup.dvo.ru:18080/tasks/$TASK_ID" -H "Authorization: Bearer <token>")
+  STATUS=$(echo $RESP | jq -r '.status')
+  echo "Status: $STATUS"
+  if [ "$STATUS" = "done" ] || [ "$STATUS" = "failed" ]; then
+    echo "$RESP" | jq .
+    break
+  fi
+  sleep 2
+done
 
 # Profile, PNG, range-corrected
-curl "http://lidarbaclup.dvo.ru:18080/prepared/10/355/1/cross/profile?type=png&formula=rangecorr" \
+curl "http://lidarbaclup.dvo.ru:18080/prepared/10?wavelen=355&action=profile&type=png&formula=rangecorr" \
   -H "Authorization: Bearer <token>"
 
 # Plotly JSON (для интерактивного графика во фронтенде)
-curl "http://lidarbaclup.dvo.ru:18080/prepared/10/532/0/parallel/image?type=json&formula=lograngecorr" \
+curl "http://lidarbaclup.dvo.ru:18080/prepared/10?wavelen=532&polarization=p&action=image&type=json" \
   -H "Authorization: Bearer <token>"
 
-# Принудительная перерисовка
-curl "http://lidarbaclup.dvo.ru:18080/prepared/10/532/0/parallel/image?type=svg&formula=raw&regenerate=true" \
+# Принудительная перерисовка в обход кеша
+curl "http://lidarbaclup.dvo.ru:18080/prepared/10?wavelen=532&action=image&regenerate=true" \
   -H "Authorization: Bearer <token>"
 ```
+
+---
+
+## 5.2. Asynqmon — мониторинг очереди
+
+В `docker-compose.yml` добавлен сервис `asynqmon` — веб-интерфейс для мониторинга очереди asynq.
+
+```
+http://localhost:8090
+```
+
+Asynqmon показывает:
+- Количество задач в каждой очереди
+- Статусы: pending, active, completed, failed, retry
+- Время выполнения и повторные попытки
+- Возможность удалять или повторно запускать задачи
 
 ---
 
@@ -483,7 +561,9 @@ curl "http://lidarbaclup.dvo.ru:18080/prepared/10/532/0/parallel/image?type=svg&
 | `GET /experiments`, `GET /experiments/:id`, `GET /experiments/:id/channels` | ✅ | ✅ | ✅ |
 | `POST /experiments` | ❌ | ❌ | ✅ |
 | `POST /experiments/:id/prepare` | ❌ | ✅ | ✅ |
-| `GET /prepared/:id/...` | ❌ | ✅ | ✅ |
+| `POST /experiments/:id/glue` | ❌ | ✅ | ✅ |
+| `GET /prepared/:id` | ❌ | ✅ | ✅ |
+| `GET /tasks/:taskID` | ✅ | ✅ | ✅ |
 
 ---
 
@@ -504,6 +584,7 @@ curl "http://lidarbaclup.dvo.ru:18080/prepared/10/532/0/parallel/image?type=svg&
 |-----|----------|
 | `200` | Успех |
 | `201` | Создано |
+| `202` | Принято (асинхронная задача поставлена в очередь) |
 | `204` | Успех без тела (например, DELETE) |
 | `400` | Ошибка валидации запроса |
 | `401` | Не аутентифицирован (отсутствует / истёк токен) |
@@ -519,15 +600,21 @@ curl "http://lidarbaclup.dvo.ru:18080/prepared/10/532/0/parallel/image?type=svg&
 Полный цикл работы с экспериментом:
 
 ```
-1. POST /auth/login                          → получаем JWT-токен
-2. POST /experiments                         → создаём эксперимент (status: staged)
-   (multipart: licel.zip, bgr.dat, meteo.txt)
-3. GET /experiments/:id                      → ждём status: done (~30 сек на препроцессинг)
-4. GET /experiments/:id/channels             → смотрим доступные каналы
-5. POST /experiments/:id/prepare             → запускаем обработку (вычитание фона+обрезка)
-   { crop_alt: 15000, bgr_type: "avgTail", bgr_alt: 12000 }
-6. GET /prepared/:prep_id/:wavelen/:photon/:polarization/image   → визуализация
-   ?type=svg&formula=raw → получаем URL графика
+ 1. POST /auth/login                           → получаем JWT-токен
+ 2. POST /experiments                          → создаём эксперимент (status: staged)
+    (multipart: licel.zip, bgr.dat, meteo.txt)
+ 3. GET /experiments/:id                       → ждём status: done (~30 сек на препроцессинг)
+ 4. GET /experiments/:id/channels              → смотрим доступные каналы
+ 5. POST /experiments/:id/prepare              → запускаем подготовку (asynq)
+    { crop_alt: 15000, bgr_type: "avgTail", bgr_alt: 12000 }
+    → статус prepared: staged → removebgr → cropping → done stage 1
+ 6. (Опционально) POST /experiments/:id/glue   → склейка каналов (asynq)
+    { wavelengths: [355, 532], polarization: "p", h1: 200, h2: 4000 }
+    → статус prepared: done stage 1 → done stage 2
+ 7. GET /prepared/:prep_id?wavelen=532&action=image   → визуализация (asynq)
+    → 202 Accepted, task_id: "abc-123"
+ 8. GET /tasks/abc-123                         → polling до status: done
+    → {"status": "done", "url": "https://minio/..."}
 ```
 
 **Статусы эксперимента:**
@@ -537,9 +624,18 @@ staged → uploading → done
                   → failed (+ error_msg)
 ```
 
-**Статусы подготовки:**
+**Статусы подготовки (prepared):**
 
 ```
-staged → removebgr → cropping → done
-                               → failed (+ error_msg)
+staged → removebgr → cropping → done stage 1 ─→ done stage 2 ─→ done
+                               → failed          (glue)       → failed
 ```
+
+**Статусы задачи визуализации (task):**
+
+```
+pending → processing → done (+ presigned URL)
+                    → failed (+ error message)
+```
+
+> 💡 После glue (статус `done stage 2`) визуализация также работает — все статусы `done stage 1`, `done stage 2` и `done` считаются готовыми для генерации графиков.

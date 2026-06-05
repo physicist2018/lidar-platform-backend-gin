@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] — 2026-06-05
+
+### Fixed
+
+- **`internal/infrastructure/queue/handlers.go`** — `handleVisualize` теперь принимает статусы `done stage 1` и `done stage 2` как валидные для визуализации. Ранее требовался только `done`, из-за чего после glue (`done stage 2`) визуализация падала с ошибкой "not ready".
+
+### Changed
+
+- **`docs/API.md`** — полное обновление документации: все три асинхронные задачи (prepare, glue, visualize), task polling (`GET /tasks/:taskID`), asynqmon, новая статусная машина.
+
+## [1.3.0] — 2026-06-05
+
+### Added
+
+- **Asynq worker** — добавлено приложение `cmd/worker` на базе `github.com/hibiken/asynq` для асинхронной обработки долгих операций.
+  - Все задачи (prepare, glue, visualize) вынесены из процесса API-сервера в отдельный воркер.
+  - API `GET /prepared/:id` теперь возвращает `task_id` для polling, а результат доступен по `GET /tasks/:taskID`.
+- **Polling-эндпоинт** — `GET /tasks/:taskID` (auth required) возвращает статус асинхронной задачи (`processing`, `done`, `failed`) и presigned URL результата.
+- **Asynqmon** — в `docker-compose.yml` добавлен сервис `asynqmon` (порт 8090) для мониторинга очереди.
+- **TaskStore** — Redis-based хранение результатов асинхронных задач для polling.
+
+### Changed
+
+- **Dockerfile** — multi-stage сборка: теперь билдятся оба бинарника (`server` и `worker`).
+- **`internal/config/app.go`** — добавлена инициализация `queue.Client` и `queue.TaskStore`; use case'ы переключены на asynq.
+- **`internal/domain/usecase/implementation/prepare`** — вместо `workerPool.Submit()` отправляет задачу в asynq.
+- **`internal/domain/usecase/implementation/glue`** — вместо `workerPool.Submit()` отправляет задачу в asynq.
+- **`internal/domain/usecase/implementation/visualize`** — полностью переписан: теперь только отправляет задачу в asynq (вместо синхронного выполнения).
+- **Интерфейс `VisualizePreparedExperimentUseCase`** — возвращает `*AsyncTaskInfo{TaskID}` вместо `(string, error)`.
+
 ## [1.2.0] — 2026-06-05
 
 ### Added

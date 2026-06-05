@@ -507,14 +507,14 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Generates a heatmap or averaged profile from prepared experiment data. Returns a presigned URL to the chart in Minio.",
+                "description": "Enqueues a chart generation task (heatmap or profile) and returns a task ID for polling. Poll /tasks/{taskID} for the result.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "experiments"
                 ],
-                "summary": "Visualize prepared experiment data",
+                "summary": "Visualize prepared experiment data (async)",
                 "parameters": [
                     {
                         "type": "integer",
@@ -533,13 +533,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Photon/analog mode: 0=analog, 1=photon",
+                        "default": 0,
+                        "description": "Photon/analog mode: 0=analog (default), 1=photon; ignored when glued=1",
                         "name": "photon",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
+                        "default": "o",
                         "description": "Polarization",
                         "name": "polarization",
                         "in": "query"
@@ -568,13 +569,13 @@ const docTemplate = `{
                     },
                     {
                         "enum": [
+                            "png",
                             "svg",
-                            "json",
-                            "png"
+                            "json"
                         ],
                         "type": "string",
-                        "default": "svg",
-                        "description": "Output type: svg, json or png",
+                        "default": "png",
+                        "description": "Output type: png, svg or json",
                         "name": "type",
                         "in": "query"
                     },
@@ -599,8 +600,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "202": {
+                        "description": "Accepted",
                         "schema": {
                             "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.VisualizeChartResponse"
                         }
@@ -619,6 +620,52 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tasks/{taskID}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the current status of an async task (pending, processing, done, failed). When done, includes the presigned chart URL.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Poll async task status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID returned by /prepared/{id}",
+                        "name": "taskID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.TaskStatusResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found",
                         "schema": {
                             "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
@@ -1248,6 +1295,26 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_kshmirko_lidar-platform-go_pkg_dto.TaskStatusResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "description": "error message (when failed)",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "pending, processing, done, failed",
+                    "type": "string"
+                },
+                "task_id": {
+                    "type": "string"
+                },
+                "url": {
+                    "description": "presigned Minio URL (when done)",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_kshmirko_lidar-platform-go_pkg_dto.UpdateUserBody": {
             "type": "object",
             "required": [
@@ -1322,7 +1389,11 @@ const docTemplate = `{
         "github_com_kshmirko_lidar-platform-go_pkg_dto.VisualizeChartResponse": {
             "type": "object",
             "properties": {
-                "url": {
+                "status": {
+                    "description": "\"accepted\" — task was enqueued",
+                    "type": "string"
+                },
+                "task_id": {
                     "type": "string"
                 }
             }

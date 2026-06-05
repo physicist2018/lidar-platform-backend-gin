@@ -17,7 +17,4 @@ type VisualizePreparedExperimentQuery struct {
 	Regenerate   bool    `form:"regenerate"`
 }
 
-// VisualizeChartResponse is returned by the visualize endpoint with the chart URL.
-type VisualizeChartResponse struct {
-	URL string `json:"url"`
-}
+// VisualizeChartResponse is now defined in visualize_chart_response.go

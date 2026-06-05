@@ -9,10 +9,11 @@ REST API для платформы LiDAR — управление пользов
 | HTTP-роутер | Gin |
 | ORM | GORM + PostgreSQL 15 |
 | Кеш | Redis 7 (cache-aside) |
+| Очередь задач | Asynq (Redis-backed) |
 | Трейсинг | OpenTelemetry (Gin + Redis) |
 | Логи | Logrus (structured JSON) |
 | Аутентификация | JWT (HS256, bcrypt-пароли) |
-| Документация | Swagger (swaggo) |
+| Документация | Swagger (swaggo), API.md |
 | Конфигурация | Viper (`.env`) |
 | Контейнеризация | Docker + docker-compose |
 
@@ -29,7 +30,7 @@ Delivery (Gin) → Domain (pure Go) ← Infrastructure (GORM, Redis)
 ## Быстрый старт
 
 ```bash
-# 1. Инфраструктура
+# 1. Инфраструктура (PostgreSQL, Redis, MinIO)
 docker-compose up -d postgres redis
 
 # 2. Миграция БД
@@ -40,9 +41,19 @@ go run ./cmd/seeder
 
 # 4. Запуск сервера
 go run ./cmd/app
+
+# 5. (Опционально) Запуск воркера для асинхронных задач
+go run ./cmd/worker
+
+Сервер поднимается на `http://localhost:8080`, воркер запускает asynq-обработчики.
+
+### Docker Compose (полный запуск)
+
+```bash
+docker-compose up -d
 ```
 
-Сервер поднимается на `http://localhost:8080`.
+Поднимает все сервисы: сервер, воркер, asynqmon (мониторинг очереди на порту 8090), PostgreSQL, Redis, MinIO.
 
 ## Admin по умолчанию
 
@@ -80,14 +91,20 @@ go run ./cmd/app
 | `GET` | `/experiments/:id` | Любая | Получить один (со статусом и путями к файлам) |
 | `GET` | `/experiments/:id/channels` | Любая | Список каналов эксперимента (`wavelen`, `polarization`, `isPhoton`, `isActive`) |
 | `POST` | `/experiments` | **admin** | Создать (multipart: `title`, `licelZip`, `licelBgr`, `meteoFile`) |
-| `POST` | `/experiments/:id/prepare` | **admin, manager** | Подготовка данных (JSON: `crop_alt`, `bgr_type`, `bgr_alt`) |
-| `POST` | `/experiments/:id/glue` | **admin, manager** | Склейка каналов (JSON: `wavelengths`, `polarization`, `h1`, `h2`) |
+| `POST` | `/experiments/:id/prepare` | **admin, manager** | Подготовка данных (JSON: `crop_alt`, `bgr_type`, `bgr_alt`). Асинхронно — статус по `GET /experiments/:id` |
+| `POST` | `/experiments/:id/glue` | **admin, manager** | Склейка каналов (JSON: `wavelengths`, `polarization`, `h1`, `h2`). Асинхронно (`202 Accepted`) |
 
 ### Prepared Experiments (требуется аутентификация)
 
 | Метод | Путь | Роль | Описание |
 |---|---|---|---|
-| `GET` | `/prepared/:id` | **admin, manager** | Визуализация: возвращает `{"url"}` — presigned URL на график в MinIO (`?wavelen=...&photon=...&polarization=...&action=...&glued=0|1&type=png|svg|json&formula=...&regenerate=true`) |
+| `GET` | `/prepared/:id` | **admin, manager** | Визуализация (async): возвращает `202` с `task_id` для polling. Query params: `?wavelen=...&polarization=...&action=...&glued=0|1&type=png|svg|json&formula=...&regenerate=true` |
+
+### Tasks (требуется аутентификация)
+
+| Метод | Путь | Роль | Описание |
+|---|---|---|---|
+| `GET` | `/tasks/:taskID` | Любая | Polling: возвращает статус задачи (`pending`, `processing`, `done`, `failed`) и presigned URL при готовности |
 
 > **GET /prepared/:id** — все параметры query:
 > - `wavelen` (float64, required) — длина волны, например `532`
@@ -98,11 +115,21 @@ go run ./cmd/app
 > - `type` (string) — `png` (default), `svg`, `json`
 > - `formula` (string) — `raw` (default), `rangecorr`, `lograngecorr`
 > - `regenerate` (bool) — принудительная перерисовка в обход кеша
-> Ответ: `{"url": "https://minio/..."}`, presigned URL действителен 1 час.
+> Ответ: `{"task_id": "...", "status": "accepted"}` — опросить готовность через `GET /tasks/:taskID`.
+>
+> **GET /tasks/:taskID** — ответы:
+> - `{"task_id": "...", "status": "pending"}` — в очереди
+> - `{"task_id": "...", "status": "processing"}` — выполняется
+> - `{"task_id": "...", "status": "done", "url": "..."}` — готов, presigned URL действителен 1 час
+> - `{"task_id": "...", "status": "failed", "error": "..."}` — ошибка
 
-> **POST /experiments** — возвращает `201` сразу со статусом `staged`. Препроцессинг (парсинг licel zip, загрузка в Minio) выполняется асинхронно в worker pool. Статус обновляется: `staged → uploading → done|failed`.
+> **POST /experiments** — возвращает `201` сразу со статусом `staged`. Препроцессинг (парсинг licel zip, загрузка в Minio) выполняется асинхронно в worker pool. Статус: `staged → uploading → done|failed`.
 
-> **POST /experiments/:id/prepare** — асинхронный пайплайн: вычитание фона (`file`/`avgTail`/`medTail`) → обрезка по высоте → загрузка в Minio (`experiments/{id}/processed/dats.zip`). Статус: `staged → removebgr → cropping → done|failed`.
+> **POST /experiments/:id/prepare** — асинхронный пайплайн (asynq): вычитание фона (`file`/`avgTail`/`medTail`) → обрезка по высоте → загрузка в Minio (`experiments/{id}/prepared/licel-prepared.zip`). Статус prepared: `staged → removebgr → cropping → done stage 1 → (glue) → done stage 2 → done|failed`.
+
+> **POST /experiments/:id/glue** — асинхронный пайплайн (asynq): склейка каналов для указанных длин волн → перезапись zip → статус `done stage 2`. Ответ: `202 Accepted`.
+
+> **GET /prepared/:id** — асинхронная визуализация (asynq): возвращает `202 Accepted` с `task_id`. Результат доступен через `GET /tasks/:taskID` (polling).
 
 ### Swagger UI
 
@@ -133,45 +160,50 @@ MINIO_USE_SSL=false
 
 ```
 cmd/
-├── app/main.go          # HTTP-сервер
-├── migrate/main.go      # AutoMigrate (GORM)
-└── seeder/main.go       # Admin user seed
+├── app/main.go            # HTTP-сервер
+├── worker/main.go         # Asynq worker (асинхронные задачи)
+├── migrate/main.go        # AutoMigrate (GORM)
+└── seeder/main.go         # Admin user seed
 
 internal/
-├── config/              # Viper config + DI composition root
+├── config/                # Viper config + DI composition root
 ├── delivery/http/
-│   ├── controller/      # Gin-контроллеры (user, experiment)
-│   ├── middleware/       # Auth, AdminOnly
-│   └── route/           # Регистрация роутов
+│   ├── controller/        # Gin-контроллеры (user, experiment)
+│   ├── middleware/         # Auth, AdminOnly
+│   └── route/             # Регистрация роутов
 ├── domain/
-│   ├── entity/          # Бизнес-модели (User, Experiment)
-│   ├── repository/      # Интерфейсы репозиториев
-│   └── usecase/         # Use-case интерфейсы + реализация
+│   ├── entity/            # Бизнес-модели (User, Experiment)
+│   ├── repository/        # Интерфейсы репозиториев
+│   └── usecase/           # Use-case интерфейсы + реализация
 ├── infrastructure/
-│   ├── datasource/      # GORM entities, persistance, cache
-│   ├── db/              # PostgreSQL, Redis подключения
-│   ├── repository/      # Реализация cache-aside репозиториев
-│   └── storage/         # Minio/S3 клиент
-└── utils/
-    ├── auth/            # JWT (generate, parse)
-    ├── hash/            # bcrypt
-    ├── mapper/          # Entity ↔ Domain ↔ DTO
-    ├── pagination/      # Дженерик-пагинация
-    ├── response/        # AppError
-    └── worker/          # Worker pool (MAX_WORKERS)
+│   ├── datasource/        # GORM entities, persistance, cache
+│   ├── db/                # PostgreSQL, Redis подключения
+│   ├── queue/             # Asynq: tasks, client, handlers, task_store
+│   ├── repository/        # Реализация cache-aside репозиториев
+│   └── storage/           # Minio/S3 клиент
+├── utils/
+│   ├── auth/              # JWT (generate, parse)
+│   ├── hash/              # bcrypt
+│   ├── mapper/            # Entity ↔ Domain ↔ DTO
+│   ├── pagination/        # Дженерик-пагинация
+│   ├── response/          # AppError
+│   └── worker/            # Worker pool (legacy, только CreateExperiment)
 
 pkg/
-├── dto/                 # Публичные DTO (запросы/ответы)
-└── visualize/           # Рендеринг графиков (SVG, PNG, Plotly JSON)
-docs/                    # Swagger (авто-генерируется)
-test/                    # Unit, integration, k6
+├── dto/                   # Публичные DTO (запросы/ответы)
+└── visualize/             # Рендеринг графиков (SVG, PNG, Plotly JSON)
+
+docs/                      # Swagger (авто-генерируется), API.md
+test/                      # Unit, integration, k6
 ```
 
 ## Команды
 
 ```bash
-# Сборка
+# Сборка всех бинарников (сервер + воркер)
 go build ./...
+go build -o ./server ./cmd/app
+go build -o ./worker ./cmd/worker
 
 # Линтинг
 go vet ./...
@@ -184,6 +216,9 @@ go run ./cmd/migrate
 
 # Сидирование
 go run ./cmd/seeder
+
+# Запуск воркера отдельно
+go run ./cmd/worker
 ```
 
 ## Лицензия

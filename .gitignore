@@ -5,8 +5,11 @@
 *.so
 *.dylib
 /app
+/backend
+/worker
 /migrate
 /seeder
+*.tar.gz
 API.md
 API.html
 
