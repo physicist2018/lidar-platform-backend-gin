@@ -5,6 +5,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
+	"github.com/kshmirko/lidar-platform-go/docs"
 	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/controller"
 	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/middleware"
 )
@@ -34,6 +35,8 @@ func NewRouteConfig(
 }
 
 func (rc *RouteConfig) Setup() {
+	docs.SwaggerInfo.Host = "lidarbackup.dvo.ru:18080"
+
 	rc.App.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Public routes
