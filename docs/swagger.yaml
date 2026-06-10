@@ -249,10 +249,9 @@ definitions:
 host: localhost:8080
 info:
   contact:
-    email: support@lidar-platform.io
+    email: kshmirko@dvo.ru
     name: API Support
-  description: REST API for the Lidar Platform — user management, point cloud processing,
-    and device telemetry.
+  description: REST API for the Lidar Platform — user management, experiment processing.
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT

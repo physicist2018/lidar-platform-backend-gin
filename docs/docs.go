@@ -11,7 +11,7 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "contact": {
             "name": "API Support",
-            "email": "support@lidar-platform.io"
+            "email": "kshmirko@dvo.ru"
         },
         "license": {
             "name": "MIT",
@@ -1416,7 +1416,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Lidar Platform API",
-	Description:      "REST API for the Lidar Platform — user management, point cloud processing, and device telemetry.",
+	Description:      "REST API for the Lidar Platform — user management, experiment processing.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
