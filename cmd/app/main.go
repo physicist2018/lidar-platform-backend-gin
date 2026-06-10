@@ -10,9 +10,9 @@ import (
 
 // @title						Lidar Platform API
 // @version					1.0
-// @description				REST API for the Lidar Platform — user management, point cloud processing, and device telemetry.
+// @description				REST API for the Lidar Platform — user management, experiment processing.
 // @contact.name				API Support
-// @contact.email				support@lidar-platform.io
+// @contact.email				kshmirko@dvo.ru
 // @license.name				MIT
 // @license.url				https://opensource.org/licenses/MIT
 // @host						localhost:8080
@@ -33,7 +33,7 @@ func main() {
 		log.Fatalf("failed to initialize application: %v", err)
 	}
 
-	if err := boot.GinEngine.Run(cfg.ServerAddress); err != nil {
+	if err := boot.EchoEngine.Start(cfg.ServerAddress); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
 }

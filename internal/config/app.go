@@ -2,16 +2,18 @@ package config
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/hibiken/asynq"
+	"github.com/labstack/echo/v5"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"gorm.io/gorm"
 
+	echootel "github.com/labstack/echo-opentelemetry"
 	"github.com/redis/go-redis/v9"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/controller"
 	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/route"
 	usecaseImpl "github.com/kshmirko/lidar-platform-go/internal/domain/usecase/implementation"
@@ -23,6 +25,7 @@ import (
 	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/storage"
 	"github.com/kshmirko/lidar-platform-go/internal/utils/auth"
 	"github.com/kshmirko/lidar-platform-go/internal/utils/worker"
+	"github.com/kshmirko/lidar-platform-go/pkg/dto"
 )
 
 type BootstrapConfig struct {
@@ -30,7 +33,7 @@ type BootstrapConfig struct {
 	Redis           *redis.Client
 	Log             *logrus.Logger
 	CacheTTLDefault time.Duration
-	GinEngine       *gin.Engine
+	EchoEngine      *echo.Echo
 	WorkerPool      *worker.Pool // kept for transition period
 }
 
@@ -75,8 +78,29 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	queueClient := queue.NewClient(redisOpt, log)
 	taskStore := queue.NewTaskStore(redisConn)
 
-	ginEngine := gin.Default()
-	ginEngine.Use(otelgin.Middleware("lidar-platform"))
+	echoEngine := echo.New()
+	echoEngine.Use(echootel.NewMiddleware("lidar-platform"))
+
+	// Centralized HTTP error handler
+	echoEngine.HTTPErrorHandler = func(c *echo.Context, err error) {
+		code := http.StatusInternalServerError
+		msg := "internal error"
+		if he, ok := err.(*echo.HTTPError); ok {
+			code = he.Code
+			msg = he.Message
+		} else if codeErr, ok := err.(interface{ StatusCode() int }); ok {
+			code = codeErr.StatusCode()
+			msg = err.Error()
+		} else if err != nil {
+			msg = err.Error()
+		}
+		// Default error handler — always send a JSON error response
+		c.JSON(code, dto.ErrorResponse{Error: msg})
+	}
+
+	// Register validator
+	validate := validator.New()
+	echoEngine.Validator = &CustomValidator{validator: validate}
 
 	// --- JWT Config ---
 	jwtConfig := auth.JWTConfig{
@@ -120,14 +144,23 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 
 	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC, prepareExpUC, visualizePrepUC, gluePrepUC, taskStore)
 
-	route.NewRouteConfig(ginEngine, cfg.JWTSecret, userController, authController, expController).Setup()
+	route.NewRouteConfig(echoEngine, cfg.JWTSecret, userController, authController, expController).Setup()
 
 	return &BootstrapConfig{
 		DB:              dbConn,
 		Redis:           redisConn,
 		Log:             log,
 		CacheTTLDefault: cfg.CacheTTLDefault,
-		GinEngine:       ginEngine,
+		EchoEngine:      echoEngine,
 		WorkerPool:      workerPool,
 	}, nil
+}
+
+// CustomValidator wraps go-playground/validator for Echo v5.
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i any) error {
+	return cv.validator.Struct(i)
 }

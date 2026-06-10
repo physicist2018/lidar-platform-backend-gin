@@ -3,7 +3,7 @@ package controller
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v5"
 	"github.com/sirupsen/logrus"
 
 	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/middleware"
@@ -58,11 +58,10 @@ func NewUserController(
 //	@Failure		401		{object}	dto.ErrorResponse	"Unauthorized"
 //	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/users [get]
-func (ctrl *UserController) GetAll(c *gin.Context) {
+func (ctrl *UserController) GetAll(c *echo.Context) error {
 	var query dto.GetAllUsersQuery
-	if err := c.ShouldBindQuery(&query); err != nil {
-		c.Error(err)
-		return
+	if err := c.Bind(&query); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 	}
 
 	if query.Page == 0 {
@@ -81,13 +80,12 @@ func (ctrl *UserController) GetAll(c *gin.Context) {
 		Email: query.Email,
 	}
 
-	result, err := ctrl.GetAllUsersUC.Execute(c.Request.Context(), filter)
+	result, err := ctrl.GetAllUsersUC.Execute(c.Request().Context(), filter)
 	if err != nil {
-		c.Error(err)
-		return
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 	}
 
-	c.JSON(http.StatusOK, mapper.ToUserResponseList(result))
+	return c.JSON(http.StatusOK, mapper.ToUserResponseList(result))
 }
 
 // GetByID godoc
@@ -104,21 +102,19 @@ func (ctrl *UserController) GetAll(c *gin.Context) {
 //	@Failure		404	{object}	dto.ErrorResponse	"User not found"
 //	@Failure		500	{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/users/{id} [get]
-func (ctrl *UserController) GetByID(c *gin.Context) {
+func (ctrl *UserController) GetByID(c *echo.Context) error {
 	var uri dto.GetUserByIDUri
-	if err := c.ShouldBindUri(&uri); err != nil {
-		c.Error(err)
-		return
+	if err := c.Bind(&uri); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 	}
 
-	user, err := ctrl.GetUserByIDUC.Execute(c.Request.Context(), uri.ID)
+	user, err := ctrl.GetUserByIDUC.Execute(c.Request().Context(), uri.ID)
 	if err != nil {
-		c.Error(err)
-		return
+		return c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 	}
 
 	user.HidePassword()
-	c.JSON(http.StatusOK, mapper.ToUserResponse(user))
+	return c.JSON(http.StatusOK, mapper.ToUserResponse(user))
 }
 
 // Create godoc
@@ -137,11 +133,13 @@ func (ctrl *UserController) GetByID(c *gin.Context) {
 //	@Failure		409		{object}	dto.ErrorResponse	"Conflict — email already exists"
 //	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/users [post]
-func (ctrl *UserController) Create(c *gin.Context) {
+func (ctrl *UserController) Create(c *echo.Context) error {
 	var body dto.CreateUserBody
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.Error(err)
-		return
+	if err := c.Bind(&body); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	}
+	if err := c.Validate(&body); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 	}
 
 	user := &entity.User{
@@ -151,13 +149,16 @@ func (ctrl *UserController) Create(c *gin.Context) {
 		Password: body.Password,
 	}
 
-	if err := ctrl.CreateUserUC.Execute(c.Request.Context(), user); err != nil {
-		c.Error(err)
-		return
+	if err := ctrl.CreateUserUC.Execute(c.Request().Context(), user); err != nil {
+		code := http.StatusInternalServerError
+		if ce, ok := err.(interface{ StatusCode() int }); ok {
+			code = ce.StatusCode()
+		}
+		return c.JSON(code, dto.ErrorResponse{Error: err.Error()})
 	}
 
 	user.HidePassword()
-	c.JSON(http.StatusCreated, mapper.ToUserResponse(user))
+	return c.JSON(http.StatusCreated, mapper.ToUserResponse(user))
 }
 
 // Update godoc
@@ -177,23 +178,23 @@ func (ctrl *UserController) Create(c *gin.Context) {
 //	@Failure		404		{object}	dto.ErrorResponse	"User not found"
 //	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/users/{id} [put]
-func (ctrl *UserController) Update(c *gin.Context) {
+func (ctrl *UserController) Update(c *echo.Context) error {
 	var uri dto.UpdateUserUri
-	if err := c.ShouldBindUri(&uri); err != nil {
-		c.Error(err)
-		return
+	if err := c.Bind(&uri); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 	}
 
 	var body dto.UpdateUserBody
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.Error(err)
-		return
+	if err := c.Bind(&body); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	}
+	if err := c.Validate(&body); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 	}
 
-	existing, err := ctrl.GetUserByIDUC.Execute(c.Request.Context(), uri.ID)
+	existing, err := ctrl.GetUserByIDUC.Execute(c.Request().Context(), uri.ID)
 	if err != nil {
-		c.Error(err)
-		return
+		return c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
 	}
 
 	user := &entity.User{
@@ -207,13 +208,12 @@ func (ctrl *UserController) Update(c *gin.Context) {
 		user.Password = body.Password
 	}
 
-	if err := ctrl.UpdateUserUC.Execute(c.Request.Context(), user); err != nil {
-		c.Error(err)
-		return
+	if err := ctrl.UpdateUserUC.Execute(c.Request().Context(), user); err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 	}
 
 	user.HidePassword()
-	c.JSON(http.StatusOK, mapper.ToUserResponse(user))
+	return c.JSON(http.StatusOK, mapper.ToUserResponse(user))
 }
 
 // Delete godoc
@@ -231,23 +231,20 @@ func (ctrl *UserController) Update(c *gin.Context) {
 //	@Failure		404	{object}	dto.ErrorResponse	"User not found"
 //	@Failure		500	{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/users/{id} [delete]
-func (ctrl *UserController) Delete(c *gin.Context) {
+func (ctrl *UserController) Delete(c *echo.Context) error {
 	var uri dto.DeleteUserUri
-	if err := c.ShouldBindUri(&uri); err != nil {
-		c.Error(err)
-		return
+	if err := c.Bind(&uri); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
 	}
 
 	claims := middleware.GetClaims(c)
 	if claims != nil && claims.UserID == uri.ID {
-		c.Error(entity.ErrAdminRequired) // can't delete yourself
-		return
+		return c.JSON(http.StatusForbidden, dto.ErrorResponse{Error: entity.ErrAdminRequired.Error()})
 	}
 
-	if err := ctrl.DeleteUserUC.Execute(c.Request.Context(), uri.ID); err != nil {
-		c.Error(err)
-		return
+	if err := ctrl.DeleteUserUC.Execute(c.Request().Context(), uri.ID); err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
 	}
 
-	c.Status(http.StatusNoContent)
+	return c.NoContent(http.StatusNoContent)
 }

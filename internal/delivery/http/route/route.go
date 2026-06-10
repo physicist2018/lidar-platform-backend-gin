@@ -1,9 +1,10 @@
 package route
 
 import (
-	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	"net/http"
+
+	"github.com/labstack/echo/v5"
+	swaggerFiles "github.com/swaggo/files/v2"
 
 	"github.com/kshmirko/lidar-platform-go/docs"
 	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/controller"
@@ -11,7 +12,7 @@ import (
 )
 
 type RouteConfig struct {
-	App                  *gin.Engine
+	App                  *echo.Echo
 	JWTSecret            string
 	UserController       *controller.UserController
 	AuthController       *controller.AuthController
@@ -19,7 +20,7 @@ type RouteConfig struct {
 }
 
 func NewRouteConfig(
-	app *gin.Engine,
+	app *echo.Echo,
 	jwtSecret string,
 	uc *controller.UserController,
 	ac *controller.AuthController,
@@ -37,7 +38,7 @@ func NewRouteConfig(
 func (rc *RouteConfig) Setup() {
 	docs.SwaggerInfo.Host = "lidarbackup.dvo.ru:18080"
 
-	rc.App.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	rc.App.GET("/swagger/*", echo.WrapHandler(http.StripPrefix("/swagger/", http.FileServer(http.FS(swaggerFiles.FS)))))
 
 	// Public routes
 	auth := rc.App.Group("/auth")
@@ -55,7 +56,7 @@ func (rc *RouteConfig) Setup() {
 	}
 }
 
-func (rc *RouteConfig) SetupUserRoutes(rg *gin.RouterGroup) {
+func (rc *RouteConfig) SetupUserRoutes(rg *echo.Group) {
 	userRoutes := rg.Group("/users")
 	{
 		userRoutes.GET("", rc.UserController.GetAll)
@@ -72,11 +73,11 @@ func (rc *RouteConfig) SetupUserRoutes(rg *gin.RouterGroup) {
 	}
 }
 
-func (rc *RouteConfig) SetupTaskRoutes(rg *gin.RouterGroup) {
+func (rc *RouteConfig) SetupTaskRoutes(rg *echo.Group) {
 	rg.GET("/tasks/:taskID", rc.ExperimentController.GetTaskStatus)
 }
 
-func (rc *RouteConfig) SetupExperimentRoutes(rg *gin.RouterGroup) {
+func (rc *RouteConfig) SetupExperimentRoutes(rg *echo.Group) {
 	expRoutes := rg.Group("/experiments")
 	{
 		expRoutes.GET("", rc.ExperimentController.GetAll)

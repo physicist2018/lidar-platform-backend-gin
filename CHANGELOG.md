@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] — 2026-06-10
+
+### Changed
+
+- **Full migration from Gin to Echo v5** (`github.com/labstack/echo/v5`).
+  - Replaced `*gin.Engine` → `*echo.Echo`, all controllers, middleware, and router registration updated to Echo v5 API (`HandlerFunc` returns `error`, `echo.MiddlewareFunc` closures).
+  - Global HTTP error handler replaced Gin's `c.Error()` mechanism with Echo's `HTTPErrorHandler` returning structured `dto.ErrorResponse`.
+  - DTO binding tags: `uri:`, `form:`, `binding:` → `param:`, `query:`, `validate:` for go-playground/validator.
+  - OpenTelemetry middleware: `otelgin` → `github.com/labstack/echo-opentelemetry` (`echootel`).
+  - Swagger: `gin-swagger` → `github.com/swaggo/files/v2` with `echo.WrapHandler`.
+  - Removed dependencies: `gin`, `gin-swagger`, `swaggo/files`, `otelgin`.
+
 ## [1.3.1] — 2026-06-05
 
 ### Fixed

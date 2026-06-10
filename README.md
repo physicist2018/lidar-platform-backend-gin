@@ -6,11 +6,11 @@ REST API для платформы LiDAR — управление пользов
 
 | Слой | Технология |
 |---|---|
-| HTTP-роутер | Gin |
+| HTTP-роутер | Echo v5 |
 | ORM | GORM + PostgreSQL 15 |
 | Кеш | Redis 7 (cache-aside) |
 | Очередь задач | Asynq (Redis-backed) |
-| Трейсинг | OpenTelemetry (Gin + Redis) |
+| Трейсинг | OpenTelemetry (Echo v5 + Redis) |
 | Логи | Logrus (structured JSON) |
 | Аутентификация | JWT (HS256, bcrypt-пароли) |
 | Документация | Swagger (swaggo), API.md |
@@ -20,7 +20,7 @@ REST API для платформы LiDAR — управление пользов
 ## Архитектура
 
 ```
-Delivery (Gin) → Domain (pure Go) ← Infrastructure (GORM, Redis)
+Delivery (Echo v5) → Domain (pure Go) ← Infrastructure (GORM, Redis)
                        ↑
                    pkg/dto
 ```
@@ -168,7 +168,7 @@ cmd/
 internal/
 ├── config/                # Viper config + DI composition root
 ├── delivery/http/
-│   ├── controller/        # Gin-контроллеры (user, experiment)
+│   ├── controller/        # Echo-контроллеры (user, experiment)
 │   ├── middleware/         # Auth, AdminOnly
 │   └── route/             # Регистрация роутов
 ├── domain/

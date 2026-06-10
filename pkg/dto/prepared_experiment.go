@@ -1,9 +1,9 @@
 package dto
 
 type PrepareExperimentBody struct {
-	CropAlt float64 `json:"crop_alt" binding:"required,min=0"`
-	BGRType string  `json:"bgr_type" binding:"required,oneof=file avgTail medTail"`
-	BGRAlt  float64 `json:"bgr_alt" binding:"omitempty,min=0"`
+	CropAlt float64 `json:"crop_alt" validate:"required,min=0"`
+	BGRType string  `json:"bgr_type" validate:"required,oneof=file avgTail medTail"`
+	BGRAlt  float64 `json:"bgr_alt" validate:"omitempty,min=0"`
 }
 
 type PreparedExperimentResponse struct {
