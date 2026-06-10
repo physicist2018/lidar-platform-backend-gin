@@ -9,6 +9,7 @@
 /worker
 /migrate
 /seeder
+/dockerdata
 *.tar.gz
 API.md
 API.html

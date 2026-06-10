@@ -1,15 +1,18 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 
-	"github.com/labstack/echo/v5"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 
 	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/middleware"
+	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/response"
 	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
 	"github.com/kshmirko/lidar-platform-go/internal/domain/usecase"
 	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/queue"
@@ -29,6 +32,7 @@ type ExperimentController struct {
 	VisualizePreparedExperimentUC usecase.VisualizePreparedExperimentUseCase
 	GluePreparedExperimentUC      usecase.GluePreparedExperimentUseCase
 	TaskStore                     *queue.TaskStore
+	Validate                      *validator.Validate
 }
 
 func NewExperimentController(
@@ -41,6 +45,7 @@ func NewExperimentController(
 	visualize usecase.VisualizePreparedExperimentUseCase,
 	glue usecase.GluePreparedExperimentUseCase,
 	taskStore *queue.TaskStore,
+	validate *validator.Validate,
 ) *ExperimentController {
 	return &ExperimentController{
 		Log:                           log,
@@ -52,6 +57,7 @@ func NewExperimentController(
 		VisualizePreparedExperimentUC: visualize,
 		GluePreparedExperimentUC:      glue,
 		TaskStore:                     taskStore,
+		Validate:                      validate,
 	}
 }
 
@@ -73,39 +79,44 @@ func NewExperimentController(
 //	@Failure		401	{object}	dto.ErrorResponse	"Unauthorized"
 //	@Failure		500	{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/experiments [post]
-func (ctrl *ExperimentController) Create(c *echo.Context) error {
-	// Echo v5 requires explicit multipart form parsing before accessing FormFile
-	if err := c.Request().ParseMultipartForm(32 << 20); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+func (ctrl *ExperimentController) Create(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(32 << 20); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
-	claims := middleware.GetClaims(c)
+	claims := middleware.GetClaims(r)
 
-	title := c.FormValue("title")
+	title := r.FormValue("title")
 	if title == "" {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: ErrTitleRequired.Error()})
+		response.Error(w, http.StatusBadRequest, ErrTitleRequired.Error())
+		return
 	}
-	comments := c.FormValue("comments")
+	comments := r.FormValue("comments")
 
-	licelZip, err := c.FormFile("licelZip")
+	_, licelZip, err := r.FormFile("licelZip")
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
 	}
-	licelBgr, err := c.FormFile("licelBgr")
+	_, licelBgr, err := r.FormFile("licelBgr")
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
 	}
-	meteoFile, err := c.FormFile("meteoFile")
+	_, meteoFile, err := r.FormFile("meteoFile")
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-	}
-
-	exp, err := ctrl.CreateExperimentUC.Execute(c.Request().Context(), claims.UserID, title, comments, licelZip, licelBgr, meteoFile)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
-	return c.JSON(http.StatusCreated, mapper.ToExperimentResponse(exp))
+	exp, err := ctrl.CreateExperimentUC.Execute(r.Context(), claims.UserID, title, comments, licelZip, licelBgr, meteoFile)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusCreated, mapper.ToExperimentResponse(exp))
 }
 
 // GetByID godoc
@@ -122,20 +133,21 @@ func (ctrl *ExperimentController) Create(c *echo.Context) error {
 //	@Failure		404	{object}	dto.ErrorResponse	"Not found"
 //	@Failure		500	{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/experiments/{id} [get]
-func (ctrl *ExperimentController) GetByID(c *echo.Context) error {
-	var uri struct {
-		ID uint `param:"id"`
-	}
-	if err := c.Bind(&uri); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-	}
-
-	exp, err := ctrl.GetExperimentByIDUC.Execute(c.Request().Context(), uri.ID)
+func (ctrl *ExperimentController) GetByID(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := parseUint(idStr)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
+		response.Error(w, http.StatusBadRequest, "invalid id")
+		return
 	}
 
-	return c.JSON(http.StatusOK, mapper.ToExperimentResponse(exp))
+	exp, err := ctrl.GetExperimentByIDUC.Execute(r.Context(), id)
+	if err != nil {
+		response.Error(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, mapper.ToExperimentResponse(exp))
 }
 
 // GetAll godoc
@@ -155,18 +167,22 @@ func (ctrl *ExperimentController) GetByID(c *echo.Context) error {
 //	@Failure		401		{object}	dto.ErrorResponse	"Unauthorized"
 //	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/experiments [get]
-func (ctrl *ExperimentController) GetAll(c *echo.Context) error {
-	var query dto.GetAllExperimentsQuery
-	if err := c.Bind(&query); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+func (ctrl *ExperimentController) GetAll(w http.ResponseWriter, r *http.Request) {
+	query := dto.GetAllExperimentsQuery{
+		Page:  1,
+		Limit: 10,
 	}
 
-	if query.Page == 0 {
-		query.Page = 1
+	q := r.URL.Query()
+	if v := q.Get("page"); v != "" {
+		query.Page = parseInt(v, 1)
 	}
-	if query.Limit == 0 {
-		query.Limit = 10
+	if v := q.Get("limit"); v != "" {
+		query.Limit = parseInt(v, 10)
 	}
+	query.Sort = q.Get("sort")
+	query.Status = q.Get("status")
+	query.Title = q.Get("title")
 
 	filter := &entity.ExperimentFilter{
 		Page:   query.Page,
@@ -176,12 +192,13 @@ func (ctrl *ExperimentController) GetAll(c *echo.Context) error {
 		Title:  query.Title,
 	}
 
-	result, err := ctrl.GetAllExperimentsUC.Execute(c.Request().Context(), filter)
+	result, err := ctrl.GetAllExperimentsUC.Execute(r.Context(), filter)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	return c.JSON(http.StatusOK, mapper.ToExperimentResponseList(result))
+	response.JSON(w, http.StatusOK, mapper.ToExperimentResponseList(result))
 }
 
 // GetChannels godoc
@@ -198,20 +215,21 @@ func (ctrl *ExperimentController) GetAll(c *echo.Context) error {
 //	@Failure		404	{object}	dto.ErrorResponse	"Not found"
 //	@Failure		500	{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/experiments/{id}/channels [get]
-func (ctrl *ExperimentController) GetChannels(c *echo.Context) error {
-	var uri struct {
-		ID uint `param:"id"`
-	}
-	if err := c.Bind(&uri); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
-	}
-
-	channels, err := ctrl.GetExperimentChannelsUC.Execute(c.Request().Context(), uri.ID)
+func (ctrl *ExperimentController) GetChannels(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := parseUint(idStr)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: err.Error()})
+		response.Error(w, http.StatusBadRequest, "invalid id")
+		return
 	}
 
-	return c.JSON(http.StatusOK, mapper.ToExperimentChannelsResponse(channels))
+	channels, err := ctrl.GetExperimentChannelsUC.Execute(r.Context(), id)
+	if err != nil {
+		response.Error(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, mapper.ToExperimentChannelsResponse(channels))
 }
 
 // Prepare godoc
@@ -231,25 +249,28 @@ func (ctrl *ExperimentController) GetChannels(c *echo.Context) error {
 //	@Failure		409		{object}	dto.ErrorResponse	"Experiment not ready"
 //	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/experiments/{id}/prepare [post]
-func (ctrl *ExperimentController) Prepare(c *echo.Context) error {
-	claims := middleware.GetClaims(c)
+func (ctrl *ExperimentController) Prepare(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r)
 
-	idStr := c.Param("id")
+	idStr := chi.URLParam(r, "id")
 	experimentID, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: fmt.Sprintf("invalid experiment id: %s", idStr)})
+		response.Error(w, http.StatusBadRequest, fmt.Sprintf("invalid experiment id: %s", idStr))
+		return
 	}
 
 	var body dto.PrepareExperimentBody
-	if err := c.Bind(&body); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
 	}
-	if err := c.Validate(&body); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	if err := ctrl.Validate.Struct(&body); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	prep, err := ctrl.PrepareExperimentUC.Execute(
-		c.Request().Context(),
+		r.Context(),
 		claims.UserID,
 		uint(experimentID),
 		body.CropAlt,
@@ -261,10 +282,11 @@ func (ctrl *ExperimentController) Prepare(c *echo.Context) error {
 		if ce, ok := err.(interface{ StatusCode() int }); ok {
 			code = ce.StatusCode()
 		}
-		return c.JSON(code, dto.ErrorResponse{Error: err.Error()})
+		response.Error(w, code, err.Error())
+		return
 	}
 
-	return c.JSON(http.StatusCreated, mapper.ToPreparedExperimentResponse(prep))
+	response.JSON(w, http.StatusCreated, mapper.ToPreparedExperimentResponse(prep))
 }
 
 // Visualize godoc
@@ -289,46 +311,56 @@ func (ctrl *ExperimentController) Prepare(c *echo.Context) error {
 //	@Failure		404			{object}	dto.ErrorResponse	"Not found"
 //	@Failure		500			{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/prepared/{id} [get]
-func (ctrl *ExperimentController) Visualize(c *echo.Context) error {
-	var uri dto.VisualizePreparedExperimentURI
-	if err := c.Bind(&uri); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+func (ctrl *ExperimentController) Visualize(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := parseUint(idStr)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid id")
+		return
 	}
 
-	var query dto.VisualizePreparedExperimentQuery
-	if err := c.Bind(&query); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	q := r.URL.Query()
+
+	action := q.Get("action")
+	if action == "" {
+		response.Error(w, http.StatusBadRequest, "action is required")
+		return
 	}
-	if err := c.Validate(&query); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+
+	wavelen, _ := strconv.ParseFloat(q.Get("wavelen"), 64)
+	photon, _ := strconv.Atoi(q.Get("photon"))
+	polarization := q.Get("polarization")
+	if polarization == "" {
+		polarization = "o"
 	}
-	if query.Type == "" {
-		query.Type = "png"
+	outputType := q.Get("type")
+	if outputType == "" {
+		outputType = "png"
 	}
-	if query.Formula == "" {
-		query.Formula = "raw"
+	formula := q.Get("formula")
+	if formula == "" {
+		formula = "raw"
 	}
-	if query.Polarization == "" {
-		query.Polarization = "o"
-	}
+	glued, _ := strconv.Atoi(q.Get("glued"))
 
 	taskInfo, err := ctrl.VisualizePreparedExperimentUC.Execute(
-		c.Request().Context(),
-		uri.ID,
-		query.Wavelen,
-		query.Photon,
-		query.Polarization,
-		query.Action,
-		query.Type,
-		query.Formula,
-		query.Regenerate,
-		query.Glued,
+		r.Context(),
+		id,
+		wavelen,
+		int8(photon),
+		polarization,
+		action,
+		outputType,
+		formula,
+		q.Get("regenerate") == "true",
+		int8(glued),
 	)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{Error: err.Error()})
+		response.Error(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 
-	return c.JSON(http.StatusAccepted, dto.VisualizeChartResponse{
+	response.JSON(w, http.StatusAccepted, dto.VisualizeChartResponse{
 		TaskID: taskInfo.TaskID,
 		Status: "accepted",
 	})
@@ -346,18 +378,20 @@ func (ctrl *ExperimentController) Visualize(c *echo.Context) error {
 //	@Failure		404		{object}	dto.ErrorResponse	"Task not found"
 //	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/tasks/{taskID} [get]
-func (ctrl *ExperimentController) GetTaskStatus(c *echo.Context) error {
-	taskID := c.Param("taskID")
+func (ctrl *ExperimentController) GetTaskStatus(w http.ResponseWriter, r *http.Request) {
+	taskID := chi.URLParam(r, "taskID")
 	if taskID == "" {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: "taskID is required"})
+		response.Error(w, http.StatusBadRequest, "taskID is required")
+		return
 	}
 
-	res, err := ctrl.TaskStore.Get(c.Request().Context(), taskID)
+	res, err := ctrl.TaskStore.Get(r.Context(), taskID)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, dto.ErrorResponse{Error: fmt.Sprintf("task %s not found", taskID)})
+		response.Error(w, http.StatusNotFound, fmt.Sprintf("task %s not found", taskID))
+		return
 	}
 
-	return c.JSON(http.StatusOK, dto.TaskStatusResponse{
+	response.JSON(w, http.StatusOK, dto.TaskStatusResponse{
 		TaskID: taskID,
 		Status: res.Status,
 		URL:    res.URL,
@@ -381,23 +415,26 @@ func (ctrl *ExperimentController) GetTaskStatus(c *echo.Context) error {
 //	@Failure		409		{object}	dto.ErrorResponse	"Invalid experiment status"
 //	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
 //	@Router			/experiments/{id}/glue [post]
-func (ctrl *ExperimentController) Glue(c *echo.Context) error {
-	idStr := c.Param("id")
+func (ctrl *ExperimentController) Glue(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
 	experimentID, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: fmt.Sprintf("invalid experiment id: %s", idStr)})
+		response.Error(w, http.StatusBadRequest, fmt.Sprintf("invalid experiment id: %s", idStr))
+		return
 	}
 
 	var body dto.GlueExperimentBody
-	if err := c.Bind(&body); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
 	}
-	if err := c.Validate(&body); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	if err := ctrl.Validate.Struct(&body); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	if err := ctrl.GluePreparedExperimentUC.Execute(
-		c.Request().Context(),
+		r.Context(),
 		uint(experimentID),
 		body.Wavelengths,
 		body.Polarization,
@@ -408,8 +445,9 @@ func (ctrl *ExperimentController) Glue(c *echo.Context) error {
 		if ce, ok := err.(interface{ StatusCode() int }); ok {
 			code = ce.StatusCode()
 		}
-		return c.JSON(code, dto.ErrorResponse{Error: err.Error()})
+		response.Error(w, code, err.Error())
+		return
 	}
 
-	return c.JSON(http.StatusAccepted, dto.MessageResponse{Message: "glue task submitted"})
+	response.JSON(w, http.StatusAccepted, dto.MessageResponse{Message: "glue task submitted"})
 }

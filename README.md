@@ -6,12 +6,12 @@ REST API для платформы LiDAR — управление пользов
 
 | Слой | Технология |
 |---|---|
-| HTTP-роутер | Echo v5 |
+| HTTP-роутер | Chi v5 |
 | ORM | GORM + PostgreSQL 15 |
 | Кеш | Redis 7 (cache-aside) |
 | Очередь задач | Asynq (Redis-backed) |
-| Трейсинг | OpenTelemetry (Echo v5 + Redis) |
-| Логи | Logrus (structured JSON) |
+| Трейсинг | OpenTelemetry (Redis) |
+| Логи | Logrus (structured JSON, replaces slog) |
 | Аутентификация | JWT (HS256, bcrypt-пароли) |
 | Документация | Swagger (swaggo), API.md |
 | Конфигурация | Viper (`.env`) |
@@ -20,7 +20,7 @@ REST API для платформы LiDAR — управление пользов
 ## Архитектура
 
 ```
-Delivery (Echo v5) → Domain (pure Go) ← Infrastructure (GORM, Redis)
+Delivery (Chi v5) → Domain (pure Go) ← Infrastructure (GORM, Redis)
                        ↑
                    pkg/dto
 ```
@@ -168,7 +168,7 @@ cmd/
 internal/
 ├── config/                # Viper config + DI composition root
 ├── delivery/http/
-│   ├── controller/        # Echo-контроллеры (user, experiment)
+│   ├── controller/        # HTTP-контроллеры (user, experiment)
 │   ├── middleware/         # Auth, AdminOnly
 │   └── route/             # Регистрация роутов
 ├── domain/

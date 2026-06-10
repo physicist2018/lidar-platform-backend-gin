@@ -5,10 +5,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/labstack/echo/v5"
+	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/response"
 )
 
-// SwaggerFS embeds swagger.json and swagger.yaml for serving by Echo.
+// SwaggerFS embeds swagger.json and swagger.yaml for serving.
 //
 //go:embed swagger.json swagger.yaml
 var SwaggerFS embed.FS
@@ -23,26 +23,26 @@ func init() {
 	}
 }
 
-// SwaggerJSONHandler serves swagger.json from embedded FS as an Echo handler.
-func SwaggerJSONHandler(c *echo.Context) error {
+// SwaggerJSONHandler serves swagger.json from embedded FS.
+func SwaggerJSONHandler(w http.ResponseWriter, r *http.Request) {
 	f, err := SwaggerFS.Open("swagger.json")
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "swagger.json not found"})
+		response.JSON(w, http.StatusNotFound, map[string]string{"error": "swagger.json not found"})
+		return
 	}
 	defer f.Close()
-	c.Response().Header().Set("Content-Type", "application/json")
-	_, err = io.Copy(c.Response(), f)
-	return err
+	w.Header().Set("Content-Type", "application/json")
+	io.Copy(w, f)
 }
 
-// SwaggerYAMLHandler serves swagger.yaml from embedded FS as an Echo handler.
-func SwaggerYAMLHandler(c *echo.Context) error {
+// SwaggerYAMLHandler serves swagger.yaml from embedded FS.
+func SwaggerYAMLHandler(w http.ResponseWriter, r *http.Request) {
 	f, err := SwaggerFS.Open("swagger.yaml")
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "swagger.yaml not found"})
+		response.JSON(w, http.StatusNotFound, map[string]string{"error": "swagger.yaml not found"})
+		return
 	}
 	defer f.Close()
-	c.Response().Header().Set("Content-Type", "text/yaml")
-	_, err = io.Copy(c.Response(), f)
-	return err
+	w.Header().Set("Content-Type", "text/yaml")
+	io.Copy(w, f)
 }

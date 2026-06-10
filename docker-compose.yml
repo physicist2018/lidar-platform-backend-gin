@@ -46,7 +46,6 @@ services:
 
   postgres:
     image: postgres:15-alpine
-    platform: linux/amd64
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
@@ -54,7 +53,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./dockerdata/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d lidar_platform"]
       interval: 5s
@@ -63,7 +62,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    platform: linux/amd64
     ports:
       - "6379:6379"
     healthcheck:
@@ -73,8 +71,7 @@ services:
       retries: 5
 
   minio:
-    image: pgsty/minio
-    platform: linux/amd64
+    image: elestio/minio
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -83,14 +80,10 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
       MINIO_BUCKET: lidar-experiments
     volumes:
-      - minio_data:/data
+      - ./dockerdata/minio:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
     command: server /data --console-address ":9001"
-
-volumes:
-  pgdata:
-  minio_data:

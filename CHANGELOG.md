@@ -2,17 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.4.0] — 2026-06-10
+## [1.5.0] — 2026-06-11
 
 ### Changed
 
-- **Full migration from Gin to Echo v5** (`github.com/labstack/echo/v5`).
-  - Replaced `*gin.Engine` → `*echo.Echo`, all controllers, middleware, and router registration updated to Echo v5 API (`HandlerFunc` returns `error`, `echo.MiddlewareFunc` closures).
-  - Global HTTP error handler replaced Gin's `c.Error()` mechanism with Echo's `HTTPErrorHandler` returning structured `dto.ErrorResponse`.
-  - DTO binding tags: `uri:`, `form:`, `binding:` → `param:`, `query:`, `validate:` for go-playground/validator.
-  - OpenTelemetry middleware: `otelgin` → `github.com/labstack/echo-opentelemetry` (`echootel`).
-  - Swagger: `gin-swagger` → `github.com/swaggo/files/v2` with `echo.WrapHandler`.
-  - Removed dependencies: `gin`, `gin-swagger`, `swaggo/files`, `otelgin`.
+- **Full migration from Echo v5 to Chi v5** (`github.com/go-chi/chi/v5`).
+  - Replaced `*echo.Echo` → `*chi.Mux`, all 9+ handler files migrated from `func(c *echo.Context) error` to standard `http.HandlerFunc`.
+  - Body binding: `c.Bind()` → `json.NewDecoder(r.Body).Decode()`.
+  - Path params: `c.Param()` → `chi.URLParam()`.
+  - Query params: `c.QueryParam()` → `r.URL.Query().Get()`.
+  - JSON responses: `c.JSON()` → new `response.JSON()` / `response.Error()` helpers.
+  - Context values: `c.Set()/c.Get()` → `context.WithValue()` / `r.Context().Value()`.
+  - Middleware: `echo.MiddlewareFunc` → `func(http.Handler) http.Handler`.
+  - Server startup: `echo.Start()` → `http.ListenAndServe()`.
+  - Route patterns: `:id` → `{id}`.
+  - Removed dependencies: `github.com/labstack/echo/v5`, `github.com/labstack/echo-opentelemetry`.
+  - Added `internal/delivery/http/controller/helpers.go` (`parseUint`, `parseInt`).
+  - Added `internal/delivery/http/response/response.go` (JSON helpers).
+
+### Fixed
+
+- **Swagger UI default spec URL**: replaced stock Swagger UI `index.html` (pointing to `petstore.swagger.io`) with a custom version that loads our local `/swagger/swagger.json`.
+  - Custom `index.html` loads Swagger UI from CDN (`unpkg.com/swagger-ui-dist@5`).
+  - Removed `github.com/swaggo/files/v2` dependency.
+
+- **Middleware ordering panic**: all middleware (including custom panic recovery) is now registered before routes, as required by Chi.
 
 ## [1.3.1] — 2026-06-05
 
