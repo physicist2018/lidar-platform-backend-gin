@@ -36,8 +36,12 @@ func NewRouteConfig(
 }
 
 func (rc *RouteConfig) Setup() {
-	docs.SwaggerInfo.Host = "lidarbackup.dvo.ru:18080"
 
+	// Exact routes first (must be registered before catch-all)
+	rc.App.GET("/swagger/swagger.json", docs.SwaggerJSONHandler)
+	rc.App.GET("/swagger/swagger.yaml", docs.SwaggerYAMLHandler)
+
+	// Serve Swagger UI static files (catch-all — must be after exact routes)
 	rc.App.GET("/swagger/*", echo.WrapHandler(http.StripPrefix("/swagger/", http.FileServer(http.FS(swaggerFiles.FS)))))
 
 	// Public routes
