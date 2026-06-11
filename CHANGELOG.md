@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] — 2026-06-11
+
+### Added
+
+- **Normalised storage of LicelPack data in PostgreSQL** (`lidar_packs`, `lidar_files`, `lidar_profiles` tables).
+  - After parsing a Licel archive, the full hierarchy (pack → files → profiles) is saved into three linked GORM entities via a single transaction.
+  - `LidarProfile.Signal` stored as `bytea` (LittleEndian `float64` array via `internal/utils/licel/signal.go`).
+  - New domain entities: `internal/domain/entity/lidar_pack.go` (`LidarPack`, `LidarFile`, `LidarProfile`).
+  - New DataSource: `internal/infrastructure/datasource/persistance/implementation/lidar_pack_datasource_impl.go` (`LidarPackDataSourceImpl.SavePack`).
+  - New Repository: `internal/infrastructure/repository/lidar_pack_repository_impl.go`.
+  - Converter: `internal/utils/licel/converter.go` (`licelformat.LicelPack` → `entity.LidarPack`).
+  - Wiring in `internal/config/app.go` — `LidarPackRepositoryImpl` injected into `CreateExperimentUseCaseImpl`.
+  - Auto-migration includes all three new entities (`cmd/migrate/main.go`).
+- **No changes to MinIO upload or downstream handlers** — prepare/visualize/glue continue to work with the zip archive as before.
+
 ## [1.5.0] — 2026-06-11
 
 ### Changed

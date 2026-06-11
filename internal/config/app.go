@@ -134,11 +134,15 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	)
 	authController := controller.NewAuthController(log, loginUC, validate)
 
+	// --- LidarPack DataSource & Repository ---
+	lidarPackDataSource := dsImpl.NewLidarPackDataSourceImpl(dbConn, log)
+	lidarPackRepo := repoImpl.NewLidarPackRepositoryImpl(lidarPackDataSource, log)
+
 	// --- Wire Experiment domain ---
 	expDataSource := dsImpl.NewExperimentDataSourceImpl(dbConn, log)
 	expRepo := repoImpl.NewExperimentRepositoryImpl(expDataSource, log)
 
-	createExpUC := usecaseImpl.NewCreateExperimentUseCaseImpl(expRepo, minioClient, workerPool, log)
+	createExpUC := usecaseImpl.NewCreateExperimentUseCaseImpl(expRepo, lidarPackRepo, minioClient, workerPool, log)
 	getExpByIDUC := usecaseImpl.NewGetExperimentByIDUseCaseImpl(expRepo, log)
 	getAllExpUC := usecaseImpl.NewGetAllExperimentsUseCaseImpl(expRepo, log)
 	getExpChannelsUC := usecaseImpl.NewGetExperimentChannelsUseCaseImpl(expRepo, log)

@@ -25,9 +25,12 @@ func main() {
 		&dbEntity.ExperimentEntity{},
 		&dbEntity.PreparedExperimentEntity{},
 		&dbEntity.ExperimentChartEntity{},
+		&dbEntity.LidarPackEntity{},
+		&dbEntity.LidarFileEntity{},
+		&dbEntity.LidarProfileEntity{},
 	); err != nil {
 		log.Fatalf("auto-migration failed: %v", err)
 	}
 
-	log.Println("Migration completed successfully: users, experiments")
+	log.Println("Migration completed successfully: users, experiments, lidar packs")
 }

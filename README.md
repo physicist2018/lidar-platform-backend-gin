@@ -184,6 +184,7 @@ internal/
 ├── utils/
 │   ├── auth/              # JWT (generate, parse)
 │   ├── hash/              # bcrypt
+│   ├── licel/             # Converter LicelPack → domain entities, signal ([]float64 ↔ bytea)
 │   ├── mapper/            # Entity ↔ Domain ↔ DTO
 │   ├── pagination/        # Дженерик-пагинация
 │   ├── response/          # AppError
