@@ -2,17 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.4.0] — 2026-06-10
+## [1.6.0] — 2026-06-11
+
+### Added
+
+- **Normalised storage of LicelPack data in PostgreSQL** (`lidar_packs`, `lidar_files`, `lidar_profiles` tables).
+  - After parsing a Licel archive, the full hierarchy (pack → files → profiles) is saved into three linked GORM entities via a single transaction.
+  - `LidarProfile.Signal` stored as `bytea` (LittleEndian `float64` array via `internal/utils/licel/signal.go`).
+  - New domain entities: `internal/domain/entity/lidar_pack.go` (`LidarPack`, `LidarFile`, `LidarProfile`).
+  - New DataSource: `internal/infrastructure/datasource/persistance/implementation/lidar_pack_datasource_impl.go` (`LidarPackDataSourceImpl.SavePack`).
+  - New Repository: `internal/infrastructure/repository/lidar_pack_repository_impl.go`.
+  - Converter: `internal/utils/licel/converter.go` (`licelformat.LicelPack` → `entity.LidarPack`).
+  - Wiring in `internal/config/app.go` — `LidarPackRepositoryImpl` injected into `CreateExperimentUseCaseImpl`.
+  - Auto-migration includes all three new entities (`cmd/migrate/main.go`).
+- **No changes to MinIO upload or downstream handlers** — prepare/visualize/glue continue to work with the zip archive as before.
+
+## [1.5.0] — 2026-06-11
 
 ### Changed
 
-- **Full migration from Gin to Echo v5** (`github.com/labstack/echo/v5`).
-  - Replaced `*gin.Engine` → `*echo.Echo`, all controllers, middleware, and router registration updated to Echo v5 API (`HandlerFunc` returns `error`, `echo.MiddlewareFunc` closures).
-  - Global HTTP error handler replaced Gin's `c.Error()` mechanism with Echo's `HTTPErrorHandler` returning structured `dto.ErrorResponse`.
-  - DTO binding tags: `uri:`, `form:`, `binding:` → `param:`, `query:`, `validate:` for go-playground/validator.
-  - OpenTelemetry middleware: `otelgin` → `github.com/labstack/echo-opentelemetry` (`echootel`).
-  - Swagger: `gin-swagger` → `github.com/swaggo/files/v2` with `echo.WrapHandler`.
-  - Removed dependencies: `gin`, `gin-swagger`, `swaggo/files`, `otelgin`.
+- **Full migration from Echo v5 to Chi v5** (`github.com/go-chi/chi/v5`).
+  - Replaced `*echo.Echo` → `*chi.Mux`, all 9+ handler files migrated from `func(c *echo.Context) error` to standard `http.HandlerFunc`.
+  - Body binding: `c.Bind()` → `json.NewDecoder(r.Body).Decode()`.
+  - Path params: `c.Param()` → `chi.URLParam()`.
+  - Query params: `c.QueryParam()` → `r.URL.Query().Get()`.
+  - JSON responses: `c.JSON()` → new `response.JSON()` / `response.Error()` helpers.
+  - Context values: `c.Set()/c.Get()` → `context.WithValue()` / `r.Context().Value()`.
+  - Middleware: `echo.MiddlewareFunc` → `func(http.Handler) http.Handler`.
+  - Server startup: `echo.Start()` → `http.ListenAndServe()`.
+  - Route patterns: `:id` → `{id}`.
+  - Removed dependencies: `github.com/labstack/echo/v5`, `github.com/labstack/echo-opentelemetry`.
+  - Added `internal/delivery/http/controller/helpers.go` (`parseUint`, `parseInt`).
+  - Added `internal/delivery/http/response/response.go` (JSON helpers).
+
+### Fixed
+
+- **Swagger UI default spec URL**: replaced stock Swagger UI `index.html` (pointing to `petstore.swagger.io`) with a custom version that loads our local `/swagger/swagger.json`.
+  - Custom `index.html` loads Swagger UI from CDN (`unpkg.com/swagger-ui-dist@5`).
+  - Removed `github.com/swaggo/files/v2` dependency.
+
+- **Middleware ordering panic**: all middleware (including custom panic recovery) is now registered before routes, as required by Chi.
 
 ## [1.3.1] — 2026-06-05
 

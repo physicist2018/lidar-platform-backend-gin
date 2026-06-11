@@ -54,6 +54,6 @@ func main() {
 
 	log.Println("Admin user created successfully!")
 	log.Println("   Email:    admin@lidar-platform.io")
-	log.Println("   Password: admin123") //nolint:gosec
+	log.Println("   Password: admin2332361") //nolint:gosec
 	log.Println("   Role:     admin")
 }

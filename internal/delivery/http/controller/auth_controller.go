@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"encoding/json"
 	"net/http"
 
-	"github.com/labstack/echo/v5"
+	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 
+	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/response"
 	"github.com/kshmirko/lidar-platform-go/internal/domain/usecase"
 	"github.com/kshmirko/lidar-platform-go/pkg/dto"
 )
@@ -13,10 +15,11 @@ import (
 type AuthController struct {
 	Log          *logrus.Logger
 	LoginUseCase usecase.LoginUseCase
+	Validate     *validator.Validate
 }
 
-func NewAuthController(log *logrus.Logger, loginUC usecase.LoginUseCase) *AuthController {
-	return &AuthController{Log: log, LoginUseCase: loginUC}
+func NewAuthController(log *logrus.Logger, loginUC usecase.LoginUseCase, validate *validator.Validate) *AuthController {
+	return &AuthController{Log: log, LoginUseCase: loginUC, Validate: validate}
 }
 
 // Login godoc
@@ -31,22 +34,25 @@ func NewAuthController(log *logrus.Logger, loginUC usecase.LoginUseCase) *AuthCo
 //	@Failure		400		{object}	dto.ErrorResponse	"Bad request — validation failed"
 //	@Failure		401		{object}	dto.ErrorResponse	"Invalid credentials"
 //	@Router			/auth/login [post]
-func (ctrl *AuthController) Login(c *echo.Context) error {
+func (ctrl *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	var body dto.LoginRequest
-	if err := c.Bind(&body); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
 	}
-	if err := c.Validate(&body); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{Error: err.Error()})
+	if err := ctrl.Validate.Struct(&body); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
-	claims, token, err := ctrl.LoginUseCase.Execute(c.Request().Context(), body.Email, body.Password)
+	claims, token, err := ctrl.LoginUseCase.Execute(r.Context(), body.Email, body.Password)
 	if err != nil {
 		code := http.StatusInternalServerError
 		if ce, ok := err.(interface{ StatusCode() int }); ok {
 			code = ce.StatusCode()
 		}
-		return c.JSON(code, dto.ErrorResponse{Error: err.Error()})
+		response.Error(w, code, err.Error())
+		return
 	}
 
 	resp := dto.LoginResponse{
@@ -58,5 +64,5 @@ func (ctrl *AuthController) Login(c *echo.Context) error {
 		},
 	}
 
-	return c.JSON(http.StatusOK, resp)
+	response.JSON(w, http.StatusOK, resp)
 }

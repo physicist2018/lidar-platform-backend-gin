@@ -5,10 +5,8 @@ go 1.25.0
 require (
 	github.com/fogleman/gg v1.3.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/labstack/echo-opentelemetry v0.0.2
-	github.com/labstack/echo/v5 v5.1.1
 	github.com/minio/minio-go/v7 v7.2.0
-	github.com/physicist2018/licelfile/v2 v2.4.4 //v2.1.6
+	github.com/physicist2018/licelfile/v2 v2.5.0 //v2.1.6
 	github.com/redis/go-redis/extra/redisotel/v9 v9.20.0
 	github.com/redis/go-redis/v9 v9.20.0
 	github.com/sirupsen/logrus v1.9.4
@@ -24,6 +22,7 @@ require (
 )
 
 require (
+	github.com/go-chi/chi/v5 v5.3.0
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/hibiken/asynq v0.26.0
 )
@@ -31,6 +30,8 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/batchatco/go-native-netcdf v0.0.0-20260314195334-c3bf89299976 // indirect
+	github.com/batchatco/go-thrower v0.0.0-20200827035905-5cb7337f6be6 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect

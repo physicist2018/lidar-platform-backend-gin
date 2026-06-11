@@ -5,15 +5,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-playground/validator/v10"
 	"github.com/hibiken/asynq"
-	"github.com/labstack/echo/v5"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
-	echootel "github.com/labstack/echo-opentelemetry"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/controller"
 	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/route"
 	usecaseImpl "github.com/kshmirko/lidar-platform-go/internal/domain/usecase/implementation"
@@ -25,7 +25,6 @@ import (
 	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/storage"
 	"github.com/kshmirko/lidar-platform-go/internal/utils/auth"
 	"github.com/kshmirko/lidar-platform-go/internal/utils/worker"
-	"github.com/kshmirko/lidar-platform-go/pkg/dto"
 )
 
 type BootstrapConfig struct {
@@ -33,7 +32,7 @@ type BootstrapConfig struct {
 	Redis           *redis.Client
 	Log             *logrus.Logger
 	CacheTTLDefault time.Duration
-	EchoEngine      *echo.Echo
+	Router          *chi.Mux
 	WorkerPool      *worker.Pool // kept for transition period
 }
 
@@ -78,29 +77,39 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	queueClient := queue.NewClient(redisOpt, log)
 	taskStore := queue.NewTaskStore(redisConn)
 
-	echoEngine := echo.New()
-	echoEngine.Use(echootel.NewMiddleware("lidar-platform"))
+	// --- Chi Router ---
+	router := chi.NewRouter()
 
-	// Centralized HTTP error handler
-	echoEngine.HTTPErrorHandler = func(c *echo.Context, err error) {
-		code := http.StatusInternalServerError
-		msg := "internal error"
-		if he, ok := err.(*echo.HTTPError); ok {
-			code = he.Code
-			msg = he.Message
-		} else if codeErr, ok := err.(interface{ StatusCode() int }); ok {
-			code = codeErr.StatusCode()
-			msg = err.Error()
-		} else if err != nil {
-			msg = err.Error()
-		}
-		// Default error handler — always send a JSON error response
-		c.JSON(code, dto.ErrorResponse{Error: msg})
-	}
+	// Middleware
+	router.Use(chiMiddleware.RequestID)
+	router.Use(chiMiddleware.RealIP)
+	router.Use(chiMiddleware.Logger)
+	// Centralized panic recovery handler (returns JSON, logged via logrus)
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if rec := recover(); rec != nil {
+					log.Errorf("panic recovered: %v", rec)
+					http.Error(w, `{"error":"internal error"}`, http.StatusInternalServerError)
+				}
+			}()
+			next.ServeHTTP(w, r)
+		})
+	})
+
+	// Request logging middleware
+	router.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.WithFields(logrus.Fields{
+				"method": r.Method,
+				"uri":    r.URL.String(),
+			}).Info("request")
+			next.ServeHTTP(w, r)
+		})
+	})
 
 	// Register validator
 	validate := validator.New()
-	echoEngine.Validator = &CustomValidator{validator: validate}
 
 	// --- JWT Config ---
 	jwtConfig := auth.JWTConfig{
@@ -121,15 +130,19 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	loginUC := usecaseImpl.NewLoginUseCaseImpl(userRepo, jwtConfig, log)
 
 	userController := controller.NewUserController(
-		log, getAllUsersUC, getUserByIDUC, createUserUC, updateUserUC, deleteUserUC,
+		log, getAllUsersUC, getUserByIDUC, createUserUC, updateUserUC, deleteUserUC, validate,
 	)
-	authController := controller.NewAuthController(log, loginUC)
+	authController := controller.NewAuthController(log, loginUC, validate)
+
+	// --- LidarPack DataSource & Repository ---
+	lidarPackDataSource := dsImpl.NewLidarPackDataSourceImpl(dbConn, log)
+	lidarPackRepo := repoImpl.NewLidarPackRepositoryImpl(lidarPackDataSource, log)
 
 	// --- Wire Experiment domain ---
 	expDataSource := dsImpl.NewExperimentDataSourceImpl(dbConn, log)
 	expRepo := repoImpl.NewExperimentRepositoryImpl(expDataSource, log)
 
-	createExpUC := usecaseImpl.NewCreateExperimentUseCaseImpl(expRepo, minioClient, workerPool, log)
+	createExpUC := usecaseImpl.NewCreateExperimentUseCaseImpl(expRepo, lidarPackRepo, minioClient, workerPool, log)
 	getExpByIDUC := usecaseImpl.NewGetExperimentByIDUseCaseImpl(expRepo, log)
 	getAllExpUC := usecaseImpl.NewGetAllExperimentsUseCaseImpl(expRepo, log)
 	getExpChannelsUC := usecaseImpl.NewGetExperimentChannelsUseCaseImpl(expRepo, log)
@@ -142,25 +155,16 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	visualizePrepUC := usecaseImpl.NewVisualizePreparedExperimentUseCaseImpl(queueClient, log)
 	gluePrepUC := usecaseImpl.NewGluePreparedExperimentUseCaseImpl(prepRepo, queueClient, log)
 
-	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC, prepareExpUC, visualizePrepUC, gluePrepUC, taskStore)
+	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC, prepareExpUC, visualizePrepUC, gluePrepUC, taskStore, validate)
 
-	route.NewRouteConfig(echoEngine, cfg.JWTSecret, userController, authController, expController).Setup()
+	route.NewRouteConfig(router, cfg.JWTSecret, userController, authController, expController).Setup()
 
 	return &BootstrapConfig{
 		DB:              dbConn,
 		Redis:           redisConn,
 		Log:             log,
 		CacheTTLDefault: cfg.CacheTTLDefault,
-		EchoEngine:      echoEngine,
+		Router:          router,
 		WorkerPool:      workerPool,
 	}, nil
-}
-
-// CustomValidator wraps go-playground/validator for Echo v5.
-type CustomValidator struct {
-	validator *validator.Validate
-}
-
-func (cv *CustomValidator) Validate(i any) error {
-	return cv.validator.Struct(i)
 }

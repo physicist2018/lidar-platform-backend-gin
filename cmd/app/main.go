@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/kshmirko/lidar-platform-go/internal/config"
 
@@ -33,7 +34,8 @@ func main() {
 		log.Fatalf("failed to initialize application: %v", err)
 	}
 
-	if err := boot.EchoEngine.Start(cfg.ServerAddress); err != nil {
+	log.Printf("server starting on %s", cfg.ServerAddress)
+	if err := http.ListenAndServe(cfg.ServerAddress, boot.Router); err != nil {
 		log.Fatalf("failed to start server: %v", err)
 	}
 }

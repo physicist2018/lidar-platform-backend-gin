@@ -16,29 +16,33 @@ import (
 	"github.com/kshmirko/lidar-platform-go/internal/domain/repository"
 	"github.com/kshmirko/lidar-platform-go/internal/domain/usecase"
 	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/storage"
+	"github.com/kshmirko/lidar-platform-go/internal/utils/licel"
 	"github.com/kshmirko/lidar-platform-go/internal/utils/worker"
 )
 
 type createExperimentUseCaseImpl struct {
-	repo       repository.ExperimentRepository
-	minio      *storage.MinioClient
-	workerPool *worker.Pool
-	log        *logrus.Logger
+	repo          repository.ExperimentRepository
+	lidarPackRepo repository.LidarPackRepository
+	minio         *storage.MinioClient
+	workerPool    *worker.Pool
+	log           *logrus.Logger
 }
 
 var _ usecase.CreateExperimentUseCase = (*createExperimentUseCaseImpl)(nil)
 
 func NewCreateExperimentUseCaseImpl(
 	repo repository.ExperimentRepository,
+	lidarPackRepo repository.LidarPackRepository,
 	minio *storage.MinioClient,
 	workerPool *worker.Pool,
 	log *logrus.Logger,
 ) *createExperimentUseCaseImpl {
 	return &createExperimentUseCaseImpl{
-		repo:       repo,
-		minio:      minio,
-		workerPool: workerPool,
-		log:        log,
+		repo:          repo,
+		lidarPackRepo: lidarPackRepo,
+		minio:         minio,
+		workerPool:    workerPool,
+		log:           log,
 	}
 }
 
@@ -136,6 +140,15 @@ func (u *createExperimentUseCaseImpl) preprocess(expID uint, tempDir, zipPath, b
 	// 2.5 Extract available channels from the parsed data pack
 	channels := extractChannels(pack)
 	log.WithField("channel_count", len(channels)).Info("channels extracted from licel pack")
+
+	// 2.6 Save LidarPack hierarchy to DB (files + profiles with signals)
+	lidarPack := licel.FromLicelPack(expID, pack)
+	if err := u.lidarPackRepo.SavePack(ctx, lidarPack); err != nil {
+		log.WithError(err).Error("failed to save lidar pack to db")
+		u.setFailed(ctx, expID, err.Error())
+		return
+	}
+	log.WithField("pack_id", lidarPack.ID).Info("lidar pack saved to db")
 
 	// 3. Upload files to Minio
 	basePath := fmt.Sprintf("experiments/%d/source", expID)
