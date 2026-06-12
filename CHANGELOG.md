@@ -2,20 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] — 2026-06-12
+
+### Added
+
+- **Crop**: обрезка профилей по высоте (`crop.crop_from`) в stage0. Выполняется после вычитания фона, до склейки.
+- **Glue**: теперь создаёт новый профиль с `DeviceID="BG"` вместо модификации оригинальных каналов.
+
 ## [2.0.0] — 2026-06-12
 
 ### Added
 
-- **Processing pipeline** — новый архитектурный слой для запуска алгоритмов обработки данных экспериментов.
+- **Processing pipeline** — архитектурный слой для запуска алгоритмов обработки данных экспериментов.
 - **Единый endpoint** `POST /experiments/{id}/process` — принимает `{"algorithm": "stage0", "params": {...}}`, создаёт `ProcessingRun` и запускает асинхронную обработку через Asynq.
 - **Processor registry** — расширяемый реестр алгоритмов (`internal/domain/processing/`), каждый алгоритм реализует интерфейс `Processor`.
-- **Stage0 (`stage0`)** — первый алгоритм обработки:
-  - Фон: `avgtail` (mean хвоста), `medtail` (median хвоста), `file` (вычитание BGR файла).
-  - **Crop**: обрезка профилей по высоте (`crop.crop_from`).
-  - **Glue**: склейка analog/digital каналов для указанных длин волн, с масштабированием к `analog` или `digital`. Создаёт новый профиль с `DeviceID="BG"` (оригинальные каналы не изменяются).
-- **Таблицы БД** — `processing_runs` (запуски алгоритмов), `processed_signals` (результаты обработки сигналов).
-- **Новые endpoints:** `GET /processing/{id}` — статус обработки.
-- **Методы загрузки профилей** в `LidarPackDataSource` — `GetProfilesByExperimentID`, `GetProfilesByFileID` для доступа к сигналам из БД.
+- **Stage0 (`stage0`)** — первый алгоритм обработки: фон (avgtail/medtail/file), crop, glue.
+- **Таблицы БД** — `processing_runs`, `processed_signals`.
+- **Новые endpoints:** `GET /processing/{id}`.
+- **Методы загрузки профилей** в `LidarPackDataSource` — `GetProfilesByExperimentID`, `GetProfilesByFileID`.
+- **Cascade delete** старых прогонов при создании нового.
+- **Graceful shutdown** HTTP-сервера.
 
 ## [1.9.0] — 2026-06-12
 
