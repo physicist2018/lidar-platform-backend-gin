@@ -56,6 +56,28 @@ func (u *processExperimentUseCaseImpl) Execute(
 		}
 	}
 
+	// Remove all previous runs of the same algorithm for this experiment,
+	// including their dependents (cascade delete).
+	oldRuns, err := u.procRepo.FindByExperimentIDAndAlgorithm(ctx, experimentID, algorithm)
+	if err != nil {
+		return nil, fmt.Errorf("find old runs: %w", err)
+	}
+	if len(oldRuns) > 0 {
+		ids := make([]uint, len(oldRuns))
+		for i, r := range oldRuns {
+			ids[i] = r.ID
+		}
+		u.log.WithFields(logrus.Fields{
+			"experiment_id": experimentID,
+			"algorithm":     algorithm,
+			"old_count":     len(oldRuns),
+		}).Info("removing old processing runs")
+
+		if err := u.procRepo.DeleteCascade(ctx, ids); err != nil {
+			return nil, fmt.Errorf("remove old runs: %w", err)
+		}
+	}
+
 	run := &entity.ProcessingRun{
 		UserID:       userID,
 		ExperimentID: experimentID,

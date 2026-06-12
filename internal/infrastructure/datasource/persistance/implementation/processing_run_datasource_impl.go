@@ -29,6 +29,7 @@ func (d *ProcessingRunDataSourceImpl) Create(ctx context.Context, run *entity.Pr
 		UserID:       run.UserID,
 		Algorithm:    run.Algorithm,
 		Params:       run.Params,
+		DependsOnID:  run.DependsOnID,
 		Status:       string(run.Status),
 	}
 	if err := d.DB.WithContext(ctx).Create(dbRun).Error; err != nil {
@@ -92,6 +93,47 @@ func (d *ProcessingRunDataSourceImpl) GetByExperimentID(ctx context.Context, exp
 	return runs, nil
 }
 
+func (d *ProcessingRunDataSourceImpl) GetByExperimentIDAndAlgorithm(ctx context.Context, experimentID uint, algorithm string) ([]entity.ProcessingRun, error) {
+	var dbRuns []dbEntity.ProcessingRunEntity
+	if err := d.DB.WithContext(ctx).
+		Where("experiment_id = ? AND algorithm = ?", experimentID, algorithm).
+		Order("id DESC").
+		Find(&dbRuns).Error; err != nil {
+		return nil, err
+	}
+	runs := make([]entity.ProcessingRun, len(dbRuns))
+	for i := range dbRuns {
+		runs[i] = toProcessingRunDomain(&dbRuns[i])
+	}
+	return runs, nil
+}
+
+func (d *ProcessingRunDataSourceImpl) GetByDependsOnID(ctx context.Context, parentID uint) ([]entity.ProcessingRun, error) {
+	var dbRuns []dbEntity.ProcessingRunEntity
+	if err := d.DB.WithContext(ctx).
+		Where("depends_on_id = ?", parentID).
+		Find(&dbRuns).Error; err != nil {
+		return nil, err
+	}
+	runs := make([]entity.ProcessingRun, len(dbRuns))
+	for i := range dbRuns {
+		runs[i] = toProcessingRunDomain(&dbRuns[i])
+	}
+	return runs, nil
+}
+
+func (d *ProcessingRunDataSourceImpl) DeleteByIDs(ctx context.Context, ids []uint) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	if err := d.DB.WithContext(ctx).
+		Delete(&dbEntity.ProcessingRunEntity{}, "id IN ?", ids).Error; err != nil {
+		d.Log.WithError(err).Error("ProcessingRunDataSource.DeleteByIDs failed")
+		return err
+	}
+	return nil
+}
+
 func toProcessingRunDomain(dbRun *dbEntity.ProcessingRunEntity) entity.ProcessingRun {
 	return entity.ProcessingRun{
 		ID:           dbRun.ID,
@@ -99,6 +141,7 @@ func toProcessingRunDomain(dbRun *dbEntity.ProcessingRunEntity) entity.Processin
 		UserID:       dbRun.UserID,
 		Algorithm:    dbRun.Algorithm,
 		Params:       dbRun.Params,
+		DependsOnID:  dbRun.DependsOnID,
 		Status:       entity.ProcessingStatus(dbRun.Status),
 		ErrorMsg:     dbRun.ErrorMsg,
 		CreatedAt:    dbRun.CreatedAt,

@@ -11,4 +11,7 @@ type ProcessingRunDataSource interface {
 	Update(ctx context.Context, run *entity.ProcessingRun) error
 	GetByID(ctx context.Context, id uint) (*entity.ProcessingRun, error)
 	GetByExperimentID(ctx context.Context, experimentID uint) ([]entity.ProcessingRun, error)
+	GetByExperimentIDAndAlgorithm(ctx context.Context, experimentID uint, algorithm string) ([]entity.ProcessingRun, error)
+	GetByDependsOnID(ctx context.Context, parentID uint) ([]entity.ProcessingRun, error)
+	DeleteByIDs(ctx context.Context, ids []uint) error
 }

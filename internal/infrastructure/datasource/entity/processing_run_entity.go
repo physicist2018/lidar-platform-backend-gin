@@ -12,6 +12,7 @@ type ProcessingRunEntity struct {
 	UserID       uint   `gorm:"not null;default:1;index"`
 	Algorithm    string `gorm:"size:50;not null"`
 	Params       []byte `gorm:"type:jsonb;not null"`
+	DependsOnID  *uint  `gorm:"default:null;index"`
 	Status       string `gorm:"size:20;not null;default:staged"`
 	ErrorMsg     string `gorm:"type:text"`
 	CreatedAt    time.Time

@@ -58,10 +58,9 @@ func main() {
 	expRepo := repoImpl.NewExperimentRepositoryImpl(expDS, logger)
 
 	procRunDS := dsImpl.NewProcessingRunDataSourceImpl(dbConn, logger)
-	procRunRepo := repoImpl.NewProcessingRunRepositoryImpl(procRunDS, logger)
-
 	procSigDS := dsImpl.NewProcessedSignalDataSourceImpl(dbConn, logger)
 	procSigRepo := repoImpl.NewProcessedSignalRepositoryImpl(procSigDS, logger)
+	procRunRepo := repoImpl.NewProcessingRunRepositoryImpl(procRunDS, procSigDS, logger)
 
 	// Register algorithm processors
 	processorReg := processing.NewRegistry()

@@ -70,3 +70,16 @@ func (d *ProcessedSignalDataSourceImpl) GetByProcessingRunID(ctx context.Context
 	}
 	return signals, nil
 }
+
+func (d *ProcessedSignalDataSourceImpl) DeleteByProcessingRunIDs(ctx context.Context, runIDs []uint) error {
+	if len(runIDs) == 0 {
+		return nil
+	}
+	if err := d.DB.WithContext(ctx).
+		Where("processing_run_id IN ?", runIDs).
+		Delete(&dbEntity.ProcessedSignalEntity{}).Error; err != nil {
+		d.Log.WithError(err).Error("ProcessedSignalDataSource.DeleteByProcessingRunIDs failed")
+		return err
+	}
+	return nil
+}

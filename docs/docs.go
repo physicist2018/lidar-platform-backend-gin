@@ -42,7 +42,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.LoginRequest"
                         }
                     }
                 ],
@@ -50,19 +50,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.LoginResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.LoginResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request — validation failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Invalid credentials",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -134,25 +134,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -214,25 +214,25 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ExperimentResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -266,31 +266,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ExperimentResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -324,31 +324,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelsResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ExperimentChannelsResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -386,7 +386,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.GlueExperimentBody"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.GlueExperimentBody"
                         }
                     }
                 ],
@@ -394,31 +394,31 @@ const docTemplate = `{
                     "202": {
                         "description": "Glue task submitted",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.MessageResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Invalid experiment status",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -456,7 +456,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.PrepareExperimentBody"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.PrepareExperimentBody"
                         }
                     }
                 ],
@@ -464,37 +464,113 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.PreparedExperimentResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.PreparedExperimentResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Experiment not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Experiment not ready",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/experiments/{id}/process": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Starts an async processing run (stage0, stage1, ...) on the experiment.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "experiments"
+                ],
+                "summary": "Run processing algorithm on experiment",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Experiment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Processing parameters",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ProcessExperimentBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ProcessingRunResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Experiment not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Experiment not ready",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -603,31 +679,89 @@ const docTemplate = `{
                     "202": {
                         "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.VisualizeChartResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.VisualizeChartResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/processing/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the current status of a processing run.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "experiments"
+                ],
+                "summary": "Get processing run status",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Processing Run ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ProcessingRunResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -661,19 +795,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.TaskStatusResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.TaskStatusResponse"
                         }
                     },
                     "404": {
                         "description": "Task not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -750,25 +884,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserPaginatedResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.UserPaginatedResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request — invalid query parameters",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -797,7 +931,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.CreateUserBody"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.CreateUserBody"
                         }
                     }
                 ],
@@ -805,37 +939,37 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.UserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request — validation failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden — admin role required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Conflict — email already exists",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -870,31 +1004,31 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.UserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request — invalid ID",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -931,7 +1065,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UpdateUserBody"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.UpdateUserBody"
                         }
                     }
                 ],
@@ -939,37 +1073,37 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.UserResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request — validation failed",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden — admin role required",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1005,31 +1139,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad request — invalid ID",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "403": {
                         "description": "Forbidden — admin role required or self-deletion",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "User not found",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse"
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
                         }
                     }
                 }
@@ -1037,7 +1171,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.CreateUserBody": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.CreateUserBody": {
             "type": "object",
             "required": [
                 "email",
@@ -1069,7 +1203,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.ErrorResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -1080,7 +1214,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.ExperimentChannelResponse": {
             "type": "object",
             "properties": {
                 "isActive": {
@@ -1099,24 +1233,24 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelsResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.ExperimentChannelsResponse": {
             "type": "object",
             "properties": {
                 "channels": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentChannelResponse"
+                        "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ExperimentChannelResponse"
                     }
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.ExperimentPaginatedResponse": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse"
+                        "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ExperimentResponse"
                     }
                 },
                 "limit": {
@@ -1133,7 +1267,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.ExperimentResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.ExperimentResponse": {
             "type": "object",
             "properties": {
                 "comments": {
@@ -1177,7 +1311,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.GlueExperimentBody": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.GlueExperimentBody": {
             "type": "object",
             "required": [
                 "h1",
@@ -1203,7 +1337,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.LoginRequest": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.LoginRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -1219,18 +1353,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.LoginResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.LoginResponse": {
             "type": "object",
             "properties": {
                 "token": {
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                    "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.UserResponse"
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.MessageResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.MessageResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -1238,7 +1372,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.PrepareExperimentBody": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.PrepareExperimentBody": {
             "type": "object",
             "required": [
                 "bgr_type",
@@ -1263,7 +1397,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.PreparedExperimentResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.PreparedExperimentResponse": {
             "type": "object",
             "properties": {
                 "bgr_alt": {
@@ -1295,7 +1429,57 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.TaskStatusResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.ProcessExperimentBody": {
+            "type": "object",
+            "required": [
+                "algorithm",
+                "params"
+            ],
+            "properties": {
+                "algorithm": {
+                    "type": "string"
+                },
+                "params": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.ProcessingRunResponse": {
+            "type": "object",
+            "properties": {
+                "algorithm": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "error_msg": {
+                    "type": "string"
+                },
+                "experiment_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "params": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.TaskStatusResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -1315,7 +1499,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.UpdateUserBody": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.UpdateUserBody": {
             "type": "object",
             "required": [
                 "email",
@@ -1346,13 +1530,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.UserPaginatedResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.UserPaginatedResponse": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse"
+                        "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.UserResponse"
                     }
                 },
                 "limit": {
@@ -1369,7 +1553,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.UserResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.UserResponse": {
             "type": "object",
             "properties": {
                 "email": {
@@ -1386,7 +1570,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_kshmirko_lidar-platform-go_pkg_dto.VisualizeChartResponse": {
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.VisualizeChartResponse": {
             "type": "object",
             "properties": {
                 "status": {

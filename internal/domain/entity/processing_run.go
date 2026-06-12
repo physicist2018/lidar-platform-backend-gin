@@ -30,6 +30,7 @@ type ProcessingRun struct {
 	UserID       uint
 	Algorithm    string // "stage0", "stage1", ...
 	Params       []byte // raw JSON — algorithm-specific parameters
+	DependsOnID  *uint  // optional parent run this result depends on
 	Status       ProcessingStatus
 	ErrorMsg     string
 	CreatedAt    time.Time

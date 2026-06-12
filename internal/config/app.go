@@ -163,7 +163,7 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	// --- Wire Processing domain ---
 	processingRunDS := dsImpl.NewProcessingRunDataSourceImpl(dbConn, log)
 	processedSigDS := dsImpl.NewProcessedSignalDataSourceImpl(dbConn, log)
-	procRunRepo := repoImpl.NewProcessingRunRepositoryImpl(processingRunDS, log)
+	procRunRepo := repoImpl.NewProcessingRunRepositoryImpl(processingRunDS, processedSigDS, log)
 	procSigRepo := repoImpl.NewProcessedSignalRepositoryImpl(processedSigDS, log)
 
 	// Register algorithm processors
