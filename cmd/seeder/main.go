@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/kshmirko/lidar-platform-go/internal/config"
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	dbEntity "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/entity"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/db"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/hash"
+	"github.com/physicist2018/lidar-platform-go/internal/config"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	dbEntity "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/db"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/hash"
 )
 
 func main() {

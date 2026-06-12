@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] — 2026-06-12
+
+### Added
+
+- **Meteo data support**:
+  - **New table `meteo_records`** — stores all meteo levels for an experiment as binary `bytea` arrays in PostgreSQL.
+  - **`Float64Slice` custom SQL type** — implements `sql.Scanner` / `driver.Valuer` for `[]float64` ↔ `bytea` (little-endian 8-byte per element).
+  - **`meteo.ParseMeteoFile`** parser — reads `meteo.dat` files extracting PRES, HGHT, TEMP (required) and RELH, MIXR, DRCT, SKNT (optional).
+  - **`meteo.StandardAtmosphere`** — generates ISA standard atmosphere (0–25 km, 100 m step) when meteo file is missing.
+  - **`ExperimentEntity.MeteoID`** — nullable FK to `meteo_records.id`.
+  - **Automatic fallback** in `preprocess()`: if `meteo.dat` is absent or unparseable, standard atmosphere is used gracefully.
+
 ## [1.7.0] — 2026-06-12
 
 ### Added

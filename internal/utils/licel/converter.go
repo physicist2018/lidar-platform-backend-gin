@@ -3,7 +3,7 @@ package licel
 import (
 	"github.com/physicist2018/licelfile/v2/licelformat"
 
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
 )
 
 // FromLicelPack converts a licelformat.LicelPack (from the external library)

@@ -1,8 +1,8 @@
 package mapper
 
 import (
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	"github.com/kshmirko/lidar-platform-go/pkg/dto"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	"github.com/physicist2018/lidar-platform-go/pkg/dto"
 )
 
 func ToPreparedExperimentResponse(exp *entity.PreparedExperiment) *dto.PreparedExperimentResponse {

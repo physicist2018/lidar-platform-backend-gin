@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/kshmirko/lidar-platform-go/internal/config"
+	"github.com/physicist2018/lidar-platform-go/internal/config"
 
-	_ "github.com/kshmirko/lidar-platform-go/docs"
+	_ "github.com/physicist2018/lidar-platform-go/docs"
 )
 
 // @title						Lidar Platform API

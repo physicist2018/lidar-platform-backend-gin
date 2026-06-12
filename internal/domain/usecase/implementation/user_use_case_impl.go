@@ -9,11 +9,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	"github.com/kshmirko/lidar-platform-go/internal/domain/repository"
-	"github.com/kshmirko/lidar-platform-go/internal/domain/usecase"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/hash"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/pagination"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/repository"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/usecase"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/hash"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/pagination"
 )
 
 type getAllUsersUseCaseImpl struct {

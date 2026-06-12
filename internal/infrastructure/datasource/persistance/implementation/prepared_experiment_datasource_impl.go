@@ -7,9 +7,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	dbEntity "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/entity"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/persistance"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	dbEntity "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/persistance"
 )
 
 var _ persistance.PreparedExperimentDataSource = (*PreparedExperimentDataSourceImpl)(nil)

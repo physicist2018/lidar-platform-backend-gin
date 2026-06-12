@@ -8,10 +8,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	dbEntity "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/entity"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/persistance"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/licel"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	dbEntity "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/persistance"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/licel"
 )
 
 var _ persistance.LidarPackDataSource = (*LidarPackDataSourceImpl)(nil)

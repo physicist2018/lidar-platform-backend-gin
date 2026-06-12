@@ -1,4 +1,4 @@
-module github.com/kshmirko/lidar-platform-go
+module github.com/physicist2018/lidar-platform-go
 
 go 1.25.0
 

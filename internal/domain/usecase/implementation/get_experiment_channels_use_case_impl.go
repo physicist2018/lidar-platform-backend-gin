@@ -9,9 +9,9 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	"github.com/kshmirko/lidar-platform-go/internal/domain/repository"
-	"github.com/kshmirko/lidar-platform-go/internal/domain/usecase"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/repository"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/usecase"
 )
 
 type getExperimentChannelsUseCaseImpl struct {

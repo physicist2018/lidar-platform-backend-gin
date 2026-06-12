@@ -10,9 +10,9 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/cache/key"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/pagination"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/cache/key"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/pagination"
 )
 
 type UserCacheImpl struct {

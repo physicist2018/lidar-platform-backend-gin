@@ -8,12 +8,12 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 
-	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/middleware"
-	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/response"
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	"github.com/kshmirko/lidar-platform-go/internal/domain/usecase"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/mapper"
-	"github.com/kshmirko/lidar-platform-go/pkg/dto"
+	"github.com/physicist2018/lidar-platform-go/internal/delivery/http/middleware"
+	"github.com/physicist2018/lidar-platform-go/internal/delivery/http/response"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/usecase"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/mapper"
+	"github.com/physicist2018/lidar-platform-go/pkg/dto"
 )
 
 type UserController struct {

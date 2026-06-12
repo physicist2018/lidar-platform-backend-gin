@@ -5,12 +5,12 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	domainRepo "github.com/kshmirko/lidar-platform-go/internal/domain/repository"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/cache"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/persistance"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/pagination"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/response"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	domainRepo "github.com/physicist2018/lidar-platform-go/internal/domain/repository"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/cache"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/persistance"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/pagination"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/response"
 )
 
 type UserRepositoryImpl struct {

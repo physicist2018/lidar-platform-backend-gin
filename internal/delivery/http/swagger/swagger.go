@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kshmirko/lidar-platform-go/docs"
+	"github.com/physicist2018/lidar-platform-go/docs"
 )
 
 //go:embed index.html

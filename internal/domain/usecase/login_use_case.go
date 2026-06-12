@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 
-	"github.com/kshmirko/lidar-platform-go/internal/utils/auth"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/auth"
 )
 
 type LoginUseCase interface {

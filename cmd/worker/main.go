@@ -6,12 +6,12 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/sirupsen/logrus"
 
-	"github.com/kshmirko/lidar-platform-go/internal/config"
-	dsImpl "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/persistance/implementation"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/db"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/queue"
-	repoImpl "github.com/kshmirko/lidar-platform-go/internal/infrastructure/repository"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/storage"
+	"github.com/physicist2018/lidar-platform-go/internal/config"
+	dsImpl "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/persistance/implementation"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/db"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/queue"
+	repoImpl "github.com/physicist2018/lidar-platform-go/internal/infrastructure/repository"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/storage"
 )
 
 func main() {

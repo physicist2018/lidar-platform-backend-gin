@@ -1,8 +1,8 @@
 package mapper
 
 import (
-	domain "github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	dbEntity "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/entity"
+	domain "github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	dbEntity "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/entity"
 )
 
 func ToUserDomain(e *dbEntity.UserEntity) *domain.User {

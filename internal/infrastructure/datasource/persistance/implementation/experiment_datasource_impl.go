@@ -8,10 +8,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	dbEntity "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/entity"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/persistance"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/pagination"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	dbEntity "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/persistance"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/pagination"
 )
 
 var _ persistance.ExperimentDataSource = (*ExperimentDataSourceImpl)(nil)
@@ -66,6 +66,9 @@ func (d *ExperimentDataSourceImpl) Update(ctx context.Context, exp *entity.Exper
 	}
 	if exp.BgrFileID != nil {
 		updates["bgr_file_id"] = *exp.BgrFileID
+	}
+	if exp.MeteoID != nil {
+		updates["meteo_id"] = *exp.MeteoID
 	}
 	if exp.LicelZipPath != "" {
 		updates["licel_zip_path"] = exp.LicelZipPath
@@ -157,6 +160,7 @@ func toExperimentDomain(dbExp *dbEntity.ExperimentEntity) entity.Experiment {
 		MeasurementStopTime:  dbExp.MeasurementStopTime,
 		LidarPackID:          dbExp.LidarPackID,
 		BgrFileID:            dbExp.BgrFileID,
+		MeteoID:              dbExp.MeteoID,
 		LicelZipPath:         dbExp.LicelZipPath,
 		LicelBgrPath:         dbExp.LicelBgrPath,
 		MeteoFilePath:        dbExp.MeteoFilePath,

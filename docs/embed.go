@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/response"
+	"github.com/physicist2018/lidar-platform-go/internal/delivery/http/response"
 )
 
 // SwaggerFS embeds swagger.json and swagger.yaml for serving.

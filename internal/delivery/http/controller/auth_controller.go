@@ -7,9 +7,9 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 
-	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/response"
-	"github.com/kshmirko/lidar-platform-go/internal/domain/usecase"
-	"github.com/kshmirko/lidar-platform-go/pkg/dto"
+	"github.com/physicist2018/lidar-platform-go/internal/delivery/http/response"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/usecase"
+	"github.com/physicist2018/lidar-platform-go/pkg/dto"
 )
 
 type AuthController struct {

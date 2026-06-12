@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kshmirko/lidar-platform-go/internal/utils/auth"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/auth"
 )
 
 type claimsCtxKey struct{}

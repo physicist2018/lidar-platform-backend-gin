@@ -3,9 +3,9 @@ package route
 import (
 	"github.com/go-chi/chi/v5"
 
-	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/controller"
-	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/middleware"
-	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/swagger"
+	"github.com/physicist2018/lidar-platform-go/internal/delivery/http/controller"
+	"github.com/physicist2018/lidar-platform-go/internal/delivery/http/middleware"
+	"github.com/physicist2018/lidar-platform-go/internal/delivery/http/swagger"
 )
 
 type RouteConfig struct {

@@ -12,17 +12,19 @@ import (
 	"github.com/physicist2018/licelfile/v2/licelformat"
 	"github.com/sirupsen/logrus"
 
-	"github.com/kshmirko/lidar-platform-go/internal/domain/entity"
-	"github.com/kshmirko/lidar-platform-go/internal/domain/repository"
-	"github.com/kshmirko/lidar-platform-go/internal/domain/usecase"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/storage"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/licel"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/worker"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/repository"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/usecase"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/storage"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/licel"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/meteo"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/worker"
 )
 
 type createExperimentUseCaseImpl struct {
 	repo          repository.ExperimentRepository
 	lidarPackRepo repository.LidarPackRepository
+	meteoRepo     repository.MeteoRepository
 	minio         *storage.MinioClient
 	workerPool    *worker.Pool
 	log           *logrus.Logger
@@ -33,6 +35,7 @@ var _ usecase.CreateExperimentUseCase = (*createExperimentUseCaseImpl)(nil)
 func NewCreateExperimentUseCaseImpl(
 	repo repository.ExperimentRepository,
 	lidarPackRepo repository.LidarPackRepository,
+	meteoRepo repository.MeteoRepository,
 	minio *storage.MinioClient,
 	workerPool *worker.Pool,
 	log *logrus.Logger,
@@ -40,6 +43,7 @@ func NewCreateExperimentUseCaseImpl(
 	return &createExperimentUseCaseImpl{
 		repo:          repo,
 		lidarPackRepo: lidarPackRepo,
+		meteoRepo:     meteoRepo,
 		minio:         minio,
 		workerPool:    workerPool,
 		log:           log,
@@ -173,6 +177,41 @@ func (u *createExperimentUseCaseImpl) preprocess(expID uint, tempDir, zipPath, b
 	// 2.8 Save LidarPackID
 	lidarPackID := lidarPack.ID
 
+	// ── 2.9 Parse meteodata ───────────────────────────────────────────
+	var meteoID *uint
+
+	// Check if the meteo file exists and has content.
+	// If meteoPath is empty or the file is absent/missing, use standard atmosphere.
+	md, meteoErr := parseMeteoWithFallback(meteoPath)
+	if meteoErr != nil {
+		// Log the error but do NOT fail — use standard atmosphere as fallback
+		log.WithError(meteoErr).Warn("meteo file parse failed, using standard atmosphere")
+		md = meteo.StandardAtmosphere()
+	}
+
+	if md != nil {
+		rec := &entity.MeteoRecord{
+			ExperimentID: expID,
+			Pres:         md.Pres,
+			Hght:         md.Hght,
+			Temp:         md.Temp,
+			Relh:         md.Relh,
+			Mixr:         md.Mixr,
+			Drct:         md.Drct,
+			Sknt:         md.Sknt,
+		}
+		if err := u.meteoRepo.Save(ctx, rec); err != nil {
+			log.WithError(err).Error("failed to save meteo record to db")
+			u.setFailed(ctx, expID, err.Error())
+			return
+		}
+		meteoID = &rec.ID
+		log.WithFields(logrus.Fields{
+			"meteo_id": *meteoID,
+			"levels":   len(rec.Pres),
+		}).Info("meteo record saved to db")
+	}
+
 	// 3. Upload files to Minio
 	basePath := fmt.Sprintf("experiments/%d/source", expID)
 	zipObject := basePath + "/licel.zip"
@@ -203,6 +242,7 @@ func (u *createExperimentUseCaseImpl) preprocess(expID uint, tempDir, zipPath, b
 		MeasurementStopTime:  &maxStop,
 		LidarPackID:          &lidarPackID,
 		BgrFileID:            &bgrFileID,
+		MeteoID:              meteoID,
 		LicelZipPath:         zipObject,
 		LicelBgrPath:         bgrObject,
 		MeteoFilePath:        meteoObject,
@@ -218,6 +258,39 @@ func (u *createExperimentUseCaseImpl) preprocess(expID uint, tempDir, zipPath, b
 		"stop_time":  maxStop,
 		"files":      len(pack.Data),
 	}).Info("experiment preprocessing completed successfully")
+}
+
+// parseMeteoWithFallback attempts to parse the meteo file.
+// If the file does not exist or is empty, it returns the standard atmosphere.
+func parseMeteoWithFallback(meteoPath string) (*meteo.MeteoData, error) {
+	// Check if the path is empty
+	if meteoPath == "" {
+		return meteo.StandardAtmosphere(), nil
+	}
+
+	// Check if file exists
+	info, err := os.Stat(meteoPath)
+	if err != nil {
+		// File doesn't exist — return standard atmosphere, no error
+		if os.IsNotExist(err) {
+			return meteo.StandardAtmosphere(), nil
+		}
+		// Some other error — report it
+		return nil, fmt.Errorf("stat meteo file: %w", err)
+	}
+
+	// File exists but is empty — return standard atmosphere
+	if info.Size() == 0 {
+		return meteo.StandardAtmosphere(), nil
+	}
+
+	// File exists and has content — try to parse it
+	md, err := meteo.ParseMeteoFile(meteoPath)
+	if err != nil {
+		return nil, fmt.Errorf("parse meteo file: %w", err)
+	}
+
+	return md, nil
 }
 
 func (u *createExperimentUseCaseImpl) setFailed(ctx context.Context, expID uint, errMsg string) {

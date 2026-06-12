@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/kshmirko/lidar-platform-go/internal/config"
-	dbEntity "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/entity"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/db"
+	"github.com/physicist2018/lidar-platform-go/internal/config"
+	dbEntity "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/db"
 )
 
 func main() {
@@ -28,6 +28,7 @@ func main() {
 		&dbEntity.LidarPackEntity{},
 		&dbEntity.LidarFileEntity{},
 		&dbEntity.LidarProfileEntity{},
+		&dbEntity.MeteoRecordEntity{},
 	); err != nil {
 		log.Fatalf("auto-migration failed: %v", err)
 	}

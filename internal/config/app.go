@@ -14,17 +14,17 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/controller"
-	"github.com/kshmirko/lidar-platform-go/internal/delivery/http/route"
-	usecaseImpl "github.com/kshmirko/lidar-platform-go/internal/domain/usecase/implementation"
-	cacheImpl "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/cache/implementation"
-	dsImpl "github.com/kshmirko/lidar-platform-go/internal/infrastructure/datasource/persistance/implementation"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/db"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/queue"
-	repoImpl "github.com/kshmirko/lidar-platform-go/internal/infrastructure/repository"
-	"github.com/kshmirko/lidar-platform-go/internal/infrastructure/storage"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/auth"
-	"github.com/kshmirko/lidar-platform-go/internal/utils/worker"
+	"github.com/physicist2018/lidar-platform-go/internal/delivery/http/controller"
+	"github.com/physicist2018/lidar-platform-go/internal/delivery/http/route"
+	usecaseImpl "github.com/physicist2018/lidar-platform-go/internal/domain/usecase/implementation"
+	cacheImpl "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/cache/implementation"
+	dsImpl "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/persistance/implementation"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/db"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/queue"
+	repoImpl "github.com/physicist2018/lidar-platform-go/internal/infrastructure/repository"
+	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/storage"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/auth"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/worker"
 )
 
 type BootstrapConfig struct {
@@ -138,11 +138,15 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	lidarPackDataSource := dsImpl.NewLidarPackDataSourceImpl(dbConn, log)
 	lidarPackRepo := repoImpl.NewLidarPackRepositoryImpl(lidarPackDataSource, log)
 
+	// --- Meteo DataSource & Repository ---
+	meteoDataSource := dsImpl.NewMeteoDataSourceImpl(dbConn, log)
+	meteoRepo := repoImpl.NewMeteoRepositoryImpl(meteoDataSource, log)
+
 	// --- Wire Experiment domain ---
 	expDataSource := dsImpl.NewExperimentDataSourceImpl(dbConn, log)
 	expRepo := repoImpl.NewExperimentRepositoryImpl(expDataSource, log)
 
-	createExpUC := usecaseImpl.NewCreateExperimentUseCaseImpl(expRepo, lidarPackRepo, minioClient, workerPool, log)
+	createExpUC := usecaseImpl.NewCreateExperimentUseCaseImpl(expRepo, lidarPackRepo, meteoRepo, minioClient, workerPool, log)
 	getExpByIDUC := usecaseImpl.NewGetExperimentByIDUseCaseImpl(expRepo, log)
 	getAllExpUC := usecaseImpl.NewGetAllExperimentsUseCaseImpl(expRepo, log)
 	getExpChannelsUC := usecaseImpl.NewGetExperimentChannelsUseCaseImpl(expRepo, log)
