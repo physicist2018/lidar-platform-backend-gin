@@ -43,7 +43,7 @@ func main() {
 	// Create admin
 	admin := dbEntity.UserEntity{
 		Name:     "Administrator",
-		Email:    "admin@lidar-platform.io",
+		Email:    "kshmirko@dvo.ru",
 		Role:     string(entity.RoleAdmin),
 		Password: hashedPassword,
 	}
@@ -53,7 +53,7 @@ func main() {
 	}
 
 	log.Println("Admin user created successfully!")
-	log.Println("   Email:    admin@lidar-platform.io")
-	log.Println("   Password: admin2332361") //nolint:gosec
+	log.Printf("   Email:    %s\n", admin.Email)
+	log.Printf("   Password: %s\n", "admin2332361") //nolint:gosec
 	log.Println("   Role:     admin")
 }

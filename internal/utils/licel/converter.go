@@ -55,9 +55,7 @@ func FromLicelFile(experimentID uint, filename string, lf *licelformat.LicelFile
 
 	for _, prof := range lf.Profiles {
 		reserved := make([]int, len(prof.Reserved))
-		for i, v := range prof.Reserved {
-			reserved[i] = v
-		}
+		copy(reserved, prof.Reserved[:])
 
 		signal := make([]float64, len(prof.Data))
 		copy(signal, prof.Data)
@@ -139,9 +137,7 @@ func FromLicelPack(experimentID uint, pack *licelformat.LicelPack) *entity.Lidar
 
 		for _, prof := range lf.Profiles {
 			reserved := make([]int, len(prof.Reserved))
-			for i, v := range prof.Reserved {
-				reserved[i] = v
-			}
+			copy(reserved, prof.Reserved[:])
 
 			signal := make([]float64, len(prof.Data))
 			copy(signal, prof.Data)
