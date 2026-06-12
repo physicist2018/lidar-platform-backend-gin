@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -34,7 +35,62 @@ type BootstrapConfig struct {
 	Log             *logrus.Logger
 	CacheTTLDefault time.Duration
 	Router          *chi.Mux
+	HTTPServer      *http.Server
 	WorkerPool      *worker.Pool // kept for transition period
+	QueueClient     *queue.Client
+}
+
+// Shutdown performs a graceful shutdown of all services in order.
+// The ctx controls the timeout for each shutdown step.
+func (b *BootstrapConfig) Shutdown(ctx context.Context) error {
+	b.Log.Info("shutting down...")
+
+	// 1. HTTP server — stop accepting new requests
+	if b.HTTPServer != nil {
+		if err := b.HTTPServer.Shutdown(ctx); err != nil {
+			b.Log.WithError(err).Error("http server shutdown")
+		} else {
+			b.Log.Info("http server stopped")
+		}
+	}
+
+	// 2. Legacy worker pool — finish in-flight tasks
+	if b.WorkerPool != nil {
+		b.WorkerPool.Shutdown()
+	}
+
+	// 3. Queue client — stop enqueuing
+	if b.QueueClient != nil {
+		if err := b.QueueClient.Close(); err != nil {
+			b.Log.WithError(err).Error("queue client close")
+		} else {
+			b.Log.Info("queue client closed")
+		}
+	}
+
+	// 4. Redis
+	if b.Redis != nil {
+		if err := b.Redis.Close(); err != nil {
+			b.Log.WithError(err).Error("redis close")
+		} else {
+			b.Log.Info("redis closed")
+		}
+	}
+
+	// 5. PostgreSQL
+	if b.DB != nil {
+		sqlDB, err := b.DB.DB()
+		if err == nil {
+			if err := sqlDB.Close(); err != nil {
+				b.Log.WithError(err).Error("postgres close")
+			} else {
+				b.Log.Info("postgres closed")
+			}
+		}
+	}
+
+	b.Log.Info("shutdown complete")
+	return ctx.Err()
 }
 
 // Initialize builds the full dependency graph.
@@ -183,12 +239,19 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 
 	route.NewRouteConfig(router, cfg.JWTSecret, userController, authController, expController).Setup()
 
+	httpServer := &http.Server{
+		Addr:    cfg.ServerAddress,
+		Handler: router,
+	}
+
 	return &BootstrapConfig{
 		DB:              dbConn,
 		Redis:           redisConn,
 		Log:             log,
 		CacheTTLDefault: cfg.CacheTTLDefault,
 		Router:          router,
+		HTTPServer:      httpServer,
 		WorkerPool:      workerPool,
+		QueueClient:     queueClient,
 	}, nil
 }

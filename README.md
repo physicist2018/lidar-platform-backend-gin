@@ -239,4 +239,3 @@ MIT
 
 
 ## Планы на будущее
-[ ] Graceful shutdown

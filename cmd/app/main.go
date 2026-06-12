@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/physicist2018/lidar-platform-go/internal/config"
 
@@ -34,8 +39,26 @@ func main() {
 		log.Fatalf("failed to initialize application: %v", err)
 	}
 
-	log.Printf("server starting on %s", cfg.ServerAddress)
-	if err := http.ListenAndServe(cfg.ServerAddress, boot.Router); err != nil {
-		log.Fatalf("failed to start server: %v", err)
+	// Start HTTP server in a goroutine
+	go func() {
+		boot.Log.WithField("address", cfg.ServerAddress).Info("server starting")
+		if err := boot.HTTPServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			boot.Log.WithError(err).Fatal("server error")
+		}
+	}()
+
+	// Wait for SIGINT or SIGTERM
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-quit
+	boot.Log.WithField("signal", sig.String()).Info("received shutdown signal")
+
+	// Graceful shutdown with 30s timeout
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := boot.Shutdown(shutdownCtx); err != nil {
+		boot.Log.WithError(err).Error("forced shutdown")
+		os.Exit(1)
 	}
 }
