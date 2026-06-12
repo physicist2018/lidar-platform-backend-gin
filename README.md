@@ -134,10 +134,11 @@ docker-compose up -d
 > **POST /experiments/{id}/process** — единый endpoint для запуска алгоритмов обработки. Параметры:
 > - `algorithm` (string, required) — имя алгоритма: `"stage0"`.
 > - `params` (object, required) — параметры алгоритма. Для `stage0`:
+>   - `crop.crop_from` — высота обрезки профилей (в метрах), данные выше удаляются. `0` — без обрезки.
 >   - `background.type` — `"file"`, `"avgtail"`, `"medtail"`.
 >   - `background.bgr_from` — высота начала хвоста для tail-based (в метрах).
->   - `glue` — массив объектов `{"wavelength", "polarization", "r0", "r1", "scale_to"}`.
-> Статус `ProcessingRun`: `staged → processing → done|failed`. Статус по `GET /processing/{id}`.
+>   - `glue` — массив объектов `{"wavelength", "polarization", "r0", "r1", "scale_to"}`. Создаёт новый склеенный профиль с `DeviceID="BG"`.
+> Порядок: фон → crop → glue. Статус `ProcessingRun`: `staged → processing → done|failed`. Статус по `GET /processing/{id}`.
 
 > **GET /prepared/:id** — асинхронная визуализация (asynq): возвращает `202 Accepted` с `task_id`. Результат доступен через `GET /tasks/:taskID` (polling).
 

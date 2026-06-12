@@ -11,7 +11,8 @@ All notable changes to this project will be documented in this file.
 - **Processor registry** — расширяемый реестр алгоритмов (`internal/domain/processing/`), каждый алгоритм реализует интерфейс `Processor`.
 - **Stage0 (`stage0`)** — первый алгоритм обработки:
   - Фон: `avgtail` (mean хвоста), `medtail` (median хвоста), `file` (вычитание BGR файла).
-  - Glue: склейка analog/digital каналов для указанных длин волн, с масштабированием к `analog` или `digital`.
+  - **Crop**: обрезка профилей по высоте (`crop.crop_from`).
+  - **Glue**: склейка analog/digital каналов для указанных длин волн, с масштабированием к `analog` или `digital`. Создаёт новый профиль с `DeviceID="BG"` (оригинальные каналы не изменяются).
 - **Таблицы БД** — `processing_runs` (запуски алгоритмов), `processed_signals` (результаты обработки сигналов).
 - **Новые endpoints:** `GET /processing/{id}` — статус обработки.
 - **Методы загрузки профилей** в `LidarPackDataSource` — `GetProfilesByExperimentID`, `GetProfilesByFileID` для доступа к сигналам из БД.

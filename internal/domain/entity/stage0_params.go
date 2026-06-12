@@ -2,8 +2,14 @@ package entity
 
 // Stage0Params is the algorithm-specific parameters for stage0 processing.
 type Stage0Params struct {
+	Crop       CropParams       `json:"crop"`
 	Background BackgroundParams `json:"background"`
 	Glue       []GlueParam      `json:"glue"`
+}
+
+// CropParams defines profile cropping (truncation).
+type CropParams struct {
+	CropFrom float64 `json:"crop_from"` // altitude (m) — remove data above this
 }
 
 // BackgroundParams defines how background subtraction is performed.

@@ -70,7 +70,11 @@ func (p *Stage0Processor) Execute(ctx context.Context, run *entity.ProcessingRun
 	}
 	log.Info("background subtraction completed")
 
-	// 4. Glue analog/digital channels
+	// 4. Crop profiles (truncate data above crop_from)
+	processed = p.cropProfiles(processed, params.Crop.CropFrom)
+	log.Info("cropping completed")
+
+	// 5. Glue analog/digital channels — creates new profiles with DeviceID="BG"
 	if len(params.Glue) > 0 {
 		processed, err = p.glueChannels(processed, params.Glue)
 		if err != nil {
@@ -79,7 +83,7 @@ func (p *Stage0Processor) Execute(ctx context.Context, run *entity.ProcessingRun
 		log.Info("channel gluing completed")
 	}
 
-	// 5. Save processed signals to DB
+	// 6. Save processed signals to DB
 	signals := make([]entity.ProcessedSignal, len(processed))
 	for i, prof := range processed {
 		signals[i] = entity.ProcessedSignal{
@@ -98,6 +102,31 @@ func (p *Stage0Processor) Execute(ctx context.Context, run *entity.ProcessingRun
 	log.WithField("saved_count", len(signals)).Info("processed signals saved")
 
 	return nil
+}
+
+// cropProfiles truncates all profiles so that data above cropFrom is removed.
+// If cropFrom <= 0, profiles are returned unchanged.
+func (p *Stage0Processor) cropProfiles(profiles []entity.LidarProfile, cropFrom float64) []entity.LidarProfile {
+	if cropFrom <= 0 {
+		return profiles
+	}
+
+	result := make([]entity.LidarProfile, len(profiles))
+	copy(result, profiles)
+
+	for i := range result {
+		prof := &result[i]
+		if prof.BinWidth <= 0 {
+			continue
+		}
+		maxIdx := int(math.Ceil(cropFrom / prof.BinWidth))
+		if maxIdx <= 0 || maxIdx >= len(prof.Signal) {
+			continue
+		}
+		prof.Signal = prof.Signal[:maxIdx]
+	}
+
+	return result
 }
 
 // subtractBackground applies background subtraction based on the configured method.
@@ -199,24 +228,27 @@ func (p *Stage0Processor) subtractBackground(
 }
 
 // glueChannels performs analog/digital channel gluing for specified parameters.
-// Returns new profiles — modified originals plus added glued profiles.
+// Returns profiles + newly created glued profiles with DeviceID="BG".
+// Original profiles are NOT modified.
 func (p *Stage0Processor) glueChannels(
 	profiles []entity.LidarProfile,
 	glueParams []entity.GlueParam,
 ) ([]entity.LidarProfile, error) {
 	// Build a map of profiles by (wavelength, polarization, isPhoton)
-	profileMap := make(map[string]*entity.LidarProfile)
+	profileMap := make(map[string]int) // key → index in profiles
 	for i := range profiles {
 		key := channelKey(profiles[i].Wavelength, profiles[i].Polarization, profiles[i].IsPhoton)
-		profileMap[key] = &profiles[i]
+		profileMap[key] = i
 	}
+
+	var newProfiles []entity.LidarProfile
 
 	for _, gp := range glueParams {
 		analogKey := channelKey(gp.Wavelength, gp.Polarization, false)
 		digitalKey := channelKey(gp.Wavelength, gp.Polarization, true)
 
-		analogProf, okAnalog := profileMap[analogKey]
-		digitalProf, okDigital := profileMap[digitalKey]
+		analogIdx, okAnalog := profileMap[analogKey]
+		digitalIdx, okDigital := profileMap[digitalKey]
 
 		if !okAnalog || !okDigital {
 			// Try with empty polarization
@@ -224,10 +256,10 @@ func (p *Stage0Processor) glueChannels(
 			digitalKey2 := channelKey(gp.Wavelength, "", true)
 
 			if !okAnalog {
-				analogProf, okAnalog = profileMap[analogKey2]
+				analogIdx, okAnalog = profileMap[analogKey2]
 			}
 			if !okDigital {
-				digitalProf, okDigital = profileMap[digitalKey2]
+				digitalIdx, okDigital = profileMap[digitalKey2]
 			}
 
 			if !okAnalog || !okDigital {
@@ -238,6 +270,9 @@ func (p *Stage0Processor) glueChannels(
 				continue
 			}
 		}
+
+		analogProf := &profiles[analogIdx]
+		digitalProf := &profiles[digitalIdx]
 
 		// Calculate overlap indices from altitude range [r0, r1]
 		binWidth := analogProf.BinWidth
@@ -278,40 +313,71 @@ func (p *Stage0Processor) glueChannels(
 		k := meanAnalog / meanDigital
 
 		// Build the glued signal
-		gluedLen := maxLen
-		gluedSig := make([]float64, gluedLen)
+		gluedSig := make([]float64, maxLen)
+
+		// Determine which original profile to copy metadata from
+		// When scaling to "analog", the glued profile inherits analog metadata.
+		// When scaling to "digital", it inherits digital metadata.
+		var template *entity.LidarProfile
+		if gp.ScaleTo == "analog" {
+			template = analogProf
+		} else {
+			template = digitalProf
+		}
 
 		switch gp.ScaleTo {
 		case "analog":
 			// analog[0:r0] + digital_scaled[r0:]
-			// The analog channel retains its original low-altitude data.
-			// The digital channel is scaled UP to match analog level.
 			for j := 0; j < r0Idx && j < len(analogProf.Signal); j++ {
 				gluedSig[j] = analogProf.Signal[j]
 			}
-			for j := r0Idx; j < gluedLen && j < len(digitalProf.Signal); j++ {
+			for j := r0Idx; j < maxLen && j < len(digitalProf.Signal); j++ {
 				gluedSig[j] = digitalProf.Signal[j] * k
 			}
-			// Replace digital profile signal with the glued composite
-			digitalProf.Signal = gluedSig
 
 		case "digital":
 			// analog_scaled[0:r0] + digital[r0:]
-			// The analog channel is scaled DOWN to match digital level.
-			// The digital channel retains its original high-altitude data.
 			for j := 0; j < r0Idx && j < len(analogProf.Signal); j++ {
 				gluedSig[j] = analogProf.Signal[j] / k
 			}
-			for j := r0Idx; j < gluedLen && j < len(digitalProf.Signal); j++ {
+			for j := r0Idx; j < maxLen && j < len(digitalProf.Signal); j++ {
 				gluedSig[j] = digitalProf.Signal[j]
 			}
-			// Replace analog profile signal with the glued composite
-			analogProf.Signal = gluedSig
 		}
+
+		// Create a new profile with DeviceID="BG"
+		gluedProfile := entity.LidarProfile{
+			ID:           0, // will be ignored on save (maps to processed_signals.original_profile_id)
+			Active:       template.Active,
+			IsPhoton:     template.IsPhoton,
+			LaserType:    template.LaserType,
+			NDataPoints:  template.NDataPoints,
+			Reserved:     template.Reserved,
+			HighVoltage:  template.HighVoltage,
+			BinWidth:     template.BinWidth,
+			Wavelength:   template.Wavelength,
+			Polarization: template.Polarization,
+			BinShift:     template.BinShift,
+			DecBinShift:  template.DecBinShift,
+			AdcBits:      template.AdcBits,
+			NShots:       template.NShots,
+			DiscrLevel:   template.DiscrLevel,
+			DeviceID:     "BG",
+			NCrate:       template.NCrate,
+			Signal:       gluedSig,
+		}
+		newProfiles = append(newProfiles, gluedProfile)
+
+		p.log.WithFields(logrus.Fields{
+			"wavelength":   gp.Wavelength,
+			"polarization": gp.Polarization,
+			"scale_to":     gp.ScaleTo,
+			"k":            k,
+			"len":          maxLen,
+		}).Info("glued profile created")
 	}
 
-	// Return all profiles (modified ones already updated in-place in the slice)
-	return profiles, nil
+	return append(profiles, newProfiles...), nil
 }
 
 // channelKey creates a lookup key for a profile.
