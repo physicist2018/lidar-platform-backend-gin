@@ -11,7 +11,7 @@ import (
 	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
 	dbEntity "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/entity"
 	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/persistance"
-	"github.com/physicist2018/lidar-platform-go/internal/utils/licel"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/gorm/datatypes"
 )
 
 var _ persistance.LidarPackDataSource = (*LidarPackDataSourceImpl)(nil)
@@ -122,6 +122,6 @@ func toLidarProfileEntity(fileID uint, dp *entity.LidarProfile) *dbEntity.LidarP
 		DiscrLevel:   dp.DiscrLevel,
 		DeviceID:     dp.DeviceID,
 		NCrate:       dp.NCrate,
-		Signal:       licel.Float64sToBytes(dp.Signal),
+		Signal:       datatypes.Float64Slice(dp.Signal),
 	}
 }

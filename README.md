@@ -184,7 +184,8 @@ internal/
 ├── utils/
 │   ├── auth/              # JWT (generate, parse)
 │   ├── hash/              # bcrypt
-│   ├── licel/             # Converter LicelPack → domain entities, signal ([]float64 ↔ bytea)
+│   ├── licel/             # Converter LicelPack → domain entities
+│   ├── gorm/datatypes/    # Custom GORM types (Float64Slice ↔ bytea)
 │   ├── mapper/            # Entity ↔ Domain ↔ DTO
 │   ├── pagination/        # Дженерик-пагинация
 │   ├── response/          # AppError

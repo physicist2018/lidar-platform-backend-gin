@@ -10,7 +10,7 @@ import (
 	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
 	dbEntity "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/entity"
 	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/persistance"
-	"github.com/physicist2018/lidar-platform-go/internal/utils/meteo"
+	"github.com/physicist2018/lidar-platform-go/internal/utils/gorm/datatypes"
 )
 
 var _ persistance.MeteoDataSource = (*MeteoDataSourceImpl)(nil)
@@ -51,21 +51,21 @@ func (d *MeteoDataSourceImpl) FindByExperimentID(ctx context.Context, experiment
 func toMeteoDBEntity(record *entity.MeteoRecord) *dbEntity.MeteoRecordEntity {
 	e := &dbEntity.MeteoRecordEntity{
 		ExperimentID: record.ExperimentID,
-		Pres:         meteo.Float64Slice(record.Pres),
-		Hght:         meteo.Float64Slice(record.Hght),
-		Temp:         meteo.Float64Slice(record.Temp),
+		Pres:         datatypes.Float64Slice(record.Pres),
+		Hght:         datatypes.Float64Slice(record.Hght),
+		Temp:         datatypes.Float64Slice(record.Temp),
 	}
 	if record.Relh != nil {
-		e.Relh = meteo.Float64Slice(record.Relh)
+		e.Relh = datatypes.Float64Slice(record.Relh)
 	}
 	if record.Mixr != nil {
-		e.Mixr = meteo.Float64Slice(record.Mixr)
+		e.Mixr = datatypes.Float64Slice(record.Mixr)
 	}
 	if record.Drct != nil {
-		e.Drct = meteo.Float64Slice(record.Drct)
+		e.Drct = datatypes.Float64Slice(record.Drct)
 	}
 	if record.Sknt != nil {
-		e.Sknt = meteo.Float64Slice(record.Sknt)
+		e.Sknt = datatypes.Float64Slice(record.Sknt)
 	}
 	return e
 }

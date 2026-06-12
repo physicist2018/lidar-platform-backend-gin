@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0] — 2026-06-12
+
+### Changed
+
+- **Extracted `Float64Slice`** from `utils/meteo` into `utils/gorm/datatypes` — reusable `[]float64` ↔ `bytea` SQL type with `sql.Scanner`/`driver.Valuer`.
+- **`LidarProfileEntity.Signal`** migrated from `[]byte` to `datatypes.Float64Slice` — signal is now a GORM-native `Float64Slice` instead of manual `[]byte` + `Float64sToBytes()`/`BytesToFloat64s()` helpers.
+- **Removed** `utils/licel/signal.go` — `Float64sToBytes`/`BytesToFloat64s` replaced by `datatypes.Float64Slice` scanning/valuing.
+
 ## [1.8.0] — 2026-06-12
 
 ### Added
