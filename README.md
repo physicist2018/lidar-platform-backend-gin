@@ -138,7 +138,7 @@ docker-compose up -d
 >   - `background.type` — `"file"`, `"avgtail"`, `"medtail"`.
 >   - `background.bgr_from` — высота начала хвоста для tail-based (в метрах).
 >   - `glue` — массив объектов `{"wavelength", "polarization", "r0", "r1", "scale_to"}`. Создаёт новый склеенный профиль с `DeviceID="BG"`.
-> Порядок: фон → crop → glue. Статус `ProcessingRun`: `staged → processing → done|failed`. Статус по `GET /processing/{id}`.
+> Порядок: фон → crop → glue. Результат сохраняется в `processed_signals` с полями: `signal`, `device_id`, `bin_width`, `n_data_points`, `wavelength`, `polarization`, `is_photon`. Статус `ProcessingRun`: `staged → processing → done|failed`. Статус по `GET /processing/{id}`.
 
 > **GET /prepared/:id** — асинхронная визуализация (asynq): возвращает `202 Accepted` с `task_id`. Результат доступен через `GET /tasks/:taskID` (polling).
 

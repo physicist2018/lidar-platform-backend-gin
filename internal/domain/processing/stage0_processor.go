@@ -92,6 +92,9 @@ func (p *Stage0Processor) Execute(ctx context.Context, run *entity.ProcessingRun
 			Wavelength:        prof.Wavelength,
 			Polarization:      prof.Polarization,
 			IsPhoton:          prof.IsPhoton,
+			DeviceID:          prof.DeviceID,
+			BinWidth:          prof.BinWidth,
+			NDataPoints:       prof.NDataPoints,
 			Signal:            prof.Signal,
 		}
 	}
@@ -124,8 +127,8 @@ func (p *Stage0Processor) cropProfiles(profiles []entity.LidarProfile, cropFrom 
 			continue
 		}
 		prof.Signal = prof.Signal[:maxIdx]
+		prof.NDataPoints = len(prof.Signal)
 	}
-
 	return result
 }
 

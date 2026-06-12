@@ -27,11 +27,15 @@ func (d *ProcessedSignalDataSourceImpl) BatchCreate(ctx context.Context, signals
 	entities := make([]dbEntity.ProcessedSignalEntity, len(signals))
 	for i, s := range signals {
 		entities[i] = dbEntity.ProcessedSignalEntity{
+			ID:                s.ID,
 			ProcessingRunID:   s.ProcessingRunID,
 			OriginalProfileID: s.OriginalProfileID,
 			Wavelength:        s.Wavelength,
 			Polarization:      s.Polarization,
 			IsPhoton:          s.IsPhoton,
+			DeviceID:          s.DeviceID,
+			BinWidth:          s.BinWidth,
+			NDataPoints:       s.NDataPoints,
 			Signal:            datatypes.Float64Slice(s.Signal),
 		}
 	}
@@ -65,6 +69,9 @@ func (d *ProcessedSignalDataSourceImpl) GetByProcessingRunID(ctx context.Context
 			Wavelength:        e.Wavelength,
 			Polarization:      e.Polarization,
 			IsPhoton:          e.IsPhoton,
+			DeviceID:          e.DeviceID,
+			BinWidth:          e.BinWidth,
+			NDataPoints:       e.NDataPoints,
 			Signal:            []float64(e.Signal),
 		}
 	}

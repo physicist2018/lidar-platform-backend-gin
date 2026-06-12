@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] — 2026-06-12
+
+### Added
+
+- **DeviceID, BinWidth, NDataPoints**: добавлены в `ProcessedSignal` и сохраняются в БД.
+- Поля `DeviceID`, `BinWidth`, `NDataPoints` теперь маппятся в `processed_signals` и доступны для последующих стадий обработки.
+
+### Fixed
+
+- Stage0 `cropProfiles` теперь корректно обновляет `NDataPoints` после обрезки сигнала.
+
 ## [2.1.0] — 2026-06-12
 
 ### Added
