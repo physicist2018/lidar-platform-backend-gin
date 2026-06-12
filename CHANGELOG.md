@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.0] — 2026-06-12
+
+### Removed
+
+- **Отключены ручки**: `POST /experiments/{id}/prepare`, `POST /experiments/{id}/glue`, `GET /prepared/{id}`, `GET /tasks/{taskID}`.
+- Из контроллера удалены поля `PrepareExperimentUC`, `VisualizePreparedExperimentUC`, `GluePreparedExperimentUC`, `TaskStore`.
+- Из `config/app.go` убрана инициализация use case'ов prepared experiment и task store.
+- Из README удалены секции Prepared Experiments, Tasks, упоминания prepare/glue.
+
+### Fixed
+
+- `docker-compose.yml`: asynqmon теперь использует `--redis-addr=` вместо переменной окружения `ASYNQMON_REDIS_ADDR`, которая игнорировалась образом.
+
 ## [2.2.0] — 2026-06-12
 
 ### Added

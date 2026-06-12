@@ -44,7 +44,6 @@ func (rc *RouteConfig) Setup() {
 		r.Use(middleware.AuthMiddleware(rc.JWTSecret))
 
 		rc.SetupUserRoutes(r)
-		rc.SetupTaskRoutes(r)
 		rc.SetupExperimentRoutes(r)
 	})
 }
@@ -64,10 +63,6 @@ func (rc *RouteConfig) SetupUserRoutes(rg chi.Router) {
 	})
 }
 
-func (rc *RouteConfig) SetupTaskRoutes(rg chi.Router) {
-	rg.Get("/tasks/{taskID}", rc.ExperimentController.GetTaskStatus)
-}
-
 func (rc *RouteConfig) SetupExperimentRoutes(rg chi.Router) {
 	rg.Route("/experiments", func(r chi.Router) {
 		r.Get("/", rc.ExperimentController.GetAll)
@@ -83,8 +78,6 @@ func (rc *RouteConfig) SetupExperimentRoutes(rg chi.Router) {
 		// Admin+Manager routes
 		r.Group(func(am chi.Router) {
 			am.Use(middleware.AdminOrManager)
-			am.Post("/{id}/prepare", rc.ExperimentController.Prepare)
-			am.Post("/{id}/glue", rc.ExperimentController.Glue)
 			am.Post("/{id}/process", rc.ExperimentController.Process)
 		})
 	})
@@ -95,9 +88,4 @@ func (rc *RouteConfig) SetupExperimentRoutes(rg chi.Router) {
 		r.Get("/{id}", rc.ExperimentController.GetProcessingStatus)
 	})
 
-	// Prepared experiment visualization (admin+manager)
-	rg.Route("/prepared", func(r chi.Router) {
-		r.Use(middleware.AdminOrManager)
-		r.Get("/{id}", rc.ExperimentController.Visualize)
-	})
 }

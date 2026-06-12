@@ -91,45 +91,13 @@ docker-compose up -d
 | `GET` | `/experiments/:id` | Любая | Получить один (со статусом, путями к файлам и ID пакета/файла фона) |
 | `GET` | `/experiments/:id/channels` | Любая | Список каналов эксперимента (`wavelen`, `polarization`, `isPhoton`, `isActive`) |
 | `POST` | `/experiments` | **admin** | Создать (multipart: `title`, `licelZip`, `licelBgr`, `meteoFile`) |
-| `POST` | `/experiments/:id/prepare` | **admin, manager** | Подготовка данных (JSON: `crop_alt`, `bgr_type`, `bgr_alt`). Асинхронно — статус по `GET /experiments/:id` |
-| `POST` | `/experiments/:id/glue` | **admin, manager** | Склейка каналов (JSON: `wavelengths`, `polarization`, `h1`, `h2`). Асинхронно (`202 Accepted`) |
 | `POST` | `/experiments/:id/process` | **admin, manager** | Запуск алгоритма обработки (JSON: `algorithm`, `params`). Асинхронно — статус по `GET /processing/{id}` |
 
-### Prepared Experiments (требуется аутентификация)
+### Processing (требуется аутентификация, admin/manager)
 
 | Метод | Путь | Роль | Описание |
 |---|---|---|---|
-| `GET` | `/prepared/:id` | **admin, manager** | Визуализация (async): возвращает `202` с `task_id` для polling. Query params: `?wavelen=...&polarization=...&action=...&glued=0|1&type=png|svg|json&formula=...&regenerate=true` |
-
-### Tasks (требуется аутентификация)
-
-| Метод | Путь | Роль | Описание |
-|---|---|---|---|
-| `GET` | `/tasks/:taskID` | Любая | Polling: возвращает статус задачи (`pending`, `processing`, `done`, `failed`) и presigned URL при готовности |
 | `GET` | `/processing/:id` | **admin, manager** | Статус запуска алгоритма обработки
-
-> **GET /prepared/:id** — все параметры query:
-> - `wavelen` (float64, required) — длина волны, например `532`
-> - `photon` (int) — `0` (аналоговый, default) или `1` (фотонный); игнорируется при `glued=1`
-> - `polarization` (string) — поляризация (default: `o`)
-> - `action` (string, required) — `image` (heatmap: X=время, Y=дистанция) или `profile` (усреднённый XY-график)
-> - `glued` (int) — `0` (не-склеенные, default) или `1` (склеенные профили DeviceID=BG)
-> - `type` (string) — `png` (default), `svg`, `json`
-> - `formula` (string) — `raw` (default), `rangecorr`, `lograngecorr`
-> - `regenerate` (bool) — принудительная перерисовка в обход кеша
-> Ответ: `{"task_id": "...", "status": "accepted"}` — опросить готовность через `GET /tasks/:taskID`.
->
-> **GET /tasks/:taskID** — ответы:
-> - `{"task_id": "...", "status": "pending"}` — в очереди
-> - `{"task_id": "...", "status": "processing"}` — выполняется
-> - `{"task_id": "...", "status": "done", "url": "..."}` — готов, presigned URL действителен 1 час
-> - `{"task_id": "...", "status": "failed", "error": "..."}` — ошибка
-
-> **POST /experiments** — возвращает `201` сразу со статусом `staged`. Препроцессинг (парсинг licel zip, загрузка в Minio) выполняется асинхронно в worker pool. Статус: `staged → uploading → done|failed`.
-
-> **POST /experiments/:id/prepare** — асинхронный пайплайн (asynq): вычитание фона (`file`/`avgTail`/`medTail`) → обрезка по высоте → загрузка в Minio (`experiments/{id}/prepared/licel-prepared.zip`). Статус prepared: `staged → removebgr → cropping → done stage 1 → (glue) → done stage 2 → done|failed`.
-
-> **POST /experiments/:id/glue** — асинхронный пайплайн (asynq): склейка каналов для указанных длин волн → перезапись zip → статус `done stage 2`. Ответ: `202 Accepted`.
 
 > **POST /experiments/{id}/process** — единый endpoint для запуска алгоритмов обработки. Параметры:
 > - `algorithm` (string, required) — имя алгоритма: `"stage0"`.
@@ -139,8 +107,6 @@ docker-compose up -d
 >   - `background.bgr_from` — высота начала хвоста для tail-based (в метрах).
 >   - `glue` — массив объектов `{"wavelength", "polarization", "r0", "r1", "scale_to"}`. Создаёт новый склеенный профиль с `DeviceID="BG"`.
 > Порядок: фон → crop → glue. Результат сохраняется в `processed_signals` с полями: `signal`, `device_id`, `bin_width`, `n_data_points`, `wavelength`, `polarization`, `is_photon`. Статус `ProcessingRun`: `staged → processing → done|failed`. Статус по `GET /processing/{id}`.
-
-> **GET /prepared/:id** — асинхронная визуализация (asynq): возвращает `202 Accepted` с `task_id`. Результат доступен через `GET /tasks/:taskID` (polling).
 
 ### Swagger UI
 

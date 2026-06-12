@@ -132,7 +132,6 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 		DB:       cfg.RedisDB,
 	}
 	queueClient := queue.NewClient(redisOpt, log)
-	taskStore := queue.NewTaskStore(redisConn)
 
 	// --- Chi Router ---
 	router := chi.NewRouter()
@@ -208,14 +207,6 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	getAllExpUC := usecaseImpl.NewGetAllExperimentsUseCaseImpl(expRepo, log)
 	getExpChannelsUC := usecaseImpl.NewGetExperimentChannelsUseCaseImpl(expRepo, log)
 
-	// --- Wire PreparedExperiment domain ---
-	prepDataSource := dsImpl.NewPreparedExperimentDataSourceImpl(dbConn, log)
-	prepRepo := repoImpl.NewPreparedExperimentRepositoryImpl(prepDataSource, log)
-	// Use asynq-based use cases
-	prepareExpUC := usecaseImpl.NewPrepareExperimentUseCaseImpl(expRepo, prepRepo, queueClient, log)
-	visualizePrepUC := usecaseImpl.NewVisualizePreparedExperimentUseCaseImpl(queueClient, log)
-	gluePrepUC := usecaseImpl.NewGluePreparedExperimentUseCaseImpl(prepRepo, queueClient, log)
-
 	// --- Wire Processing domain ---
 	processingRunDS := dsImpl.NewProcessingRunDataSourceImpl(dbConn, log)
 	processedSigDS := dsImpl.NewProcessedSignalDataSourceImpl(dbConn, log)
@@ -233,8 +224,7 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 
 	expController := controller.NewExperimentController(
 		log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC,
-		prepareExpUC, processExpUC, getProcessingStatusUC,
-		visualizePrepUC, gluePrepUC, taskStore, validate,
+		processExpUC, getProcessingStatusUC, validate,
 	)
 
 	route.NewRouteConfig(router, cfg.JWTSecret, userController, authController, expController).Setup()
