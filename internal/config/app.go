@@ -16,6 +16,7 @@ import (
 
 	"github.com/physicist2018/lidar-platform-go/internal/delivery/http/controller"
 	"github.com/physicist2018/lidar-platform-go/internal/delivery/http/route"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/processing"
 	usecaseImpl "github.com/physicist2018/lidar-platform-go/internal/domain/usecase/implementation"
 	cacheImpl "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/cache/implementation"
 	dsImpl "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/persistance/implementation"
@@ -159,7 +160,26 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	visualizePrepUC := usecaseImpl.NewVisualizePreparedExperimentUseCaseImpl(queueClient, log)
 	gluePrepUC := usecaseImpl.NewGluePreparedExperimentUseCaseImpl(prepRepo, queueClient, log)
 
-	expController := controller.NewExperimentController(log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC, prepareExpUC, visualizePrepUC, gluePrepUC, taskStore, validate)
+	// --- Wire Processing domain ---
+	processingRunDS := dsImpl.NewProcessingRunDataSourceImpl(dbConn, log)
+	processedSigDS := dsImpl.NewProcessedSignalDataSourceImpl(dbConn, log)
+	procRunRepo := repoImpl.NewProcessingRunRepositoryImpl(processingRunDS, log)
+	procSigRepo := repoImpl.NewProcessedSignalRepositoryImpl(processedSigDS, log)
+
+	// Register algorithm processors
+	processorReg := processing.NewRegistry()
+	stage0 := processing.NewStage0Processor(lidarPackRepo, procSigRepo, expRepo, log)
+	processorReg.Register(stage0)
+
+	// Use cases
+	processExpUC := usecaseImpl.NewProcessExperimentUseCaseImpl(expRepo, procRunRepo, queueClient, log)
+	getProcessingStatusUC := usecaseImpl.NewGetProcessingRunStatusUseCaseImpl(procRunRepo, log)
+
+	expController := controller.NewExperimentController(
+		log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC,
+		prepareExpUC, processExpUC, getProcessingStatusUC,
+		visualizePrepUC, gluePrepUC, taskStore, validate,
+	)
 
 	route.NewRouteConfig(router, cfg.JWTSecret, userController, authController, expController).Setup()
 

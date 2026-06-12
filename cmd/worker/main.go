@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/physicist2018/lidar-platform-go/internal/config"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/processing"
 	dsImpl "github.com/physicist2018/lidar-platform-go/internal/infrastructure/datasource/persistance/implementation"
 	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/db"
 	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/queue"
@@ -49,16 +50,39 @@ func main() {
 		dsImpl.NewExperimentChartDataSourceImpl(dbConn, logger), logger,
 	)
 
+	// --- Processing domain repos ---
+	lidarPackDS := dsImpl.NewLidarPackDataSourceImpl(dbConn, logger)
+	lidarPackRepo := repoImpl.NewLidarPackRepositoryImpl(lidarPackDS, logger)
+
+	expDS := dsImpl.NewExperimentDataSourceImpl(dbConn, logger)
+	expRepo := repoImpl.NewExperimentRepositoryImpl(expDS, logger)
+
+	procRunDS := dsImpl.NewProcessingRunDataSourceImpl(dbConn, logger)
+	procRunRepo := repoImpl.NewProcessingRunRepositoryImpl(procRunDS, logger)
+
+	procSigDS := dsImpl.NewProcessedSignalDataSourceImpl(dbConn, logger)
+	procSigRepo := repoImpl.NewProcessedSignalRepositoryImpl(procSigDS, logger)
+
+	// Register algorithm processors
+	processorReg := processing.NewRegistry()
+	stage0 := processing.NewStage0Processor(lidarPackRepo, procSigRepo, expRepo, logger)
+	processorReg.Register(stage0)
+
 	// Task store (for polling results)
 	taskStore := queue.NewTaskStore(redisConn)
 
 	// Handler dependencies
 	deps := &queue.HandlerDeps{
-		PrepRepo:  prepRepo,
-		ChartRepo: chartRepo,
-		Minio:     minioClient,
-		TaskStore: taskStore,
-		Log:       logger,
+		PrepRepo:      prepRepo,
+		ChartRepo:     chartRepo,
+		ProcRunRepo:   procRunRepo,
+		ProcSigRepo:   procSigRepo,
+		ExpRepo:       expRepo,
+		LidarPackRepo: lidarPackRepo,
+		ProcessorReg:  processorReg,
+		Minio:         minioClient,
+		TaskStore:     taskStore,
+		Log:           logger,
 	}
 
 	// Asynq server

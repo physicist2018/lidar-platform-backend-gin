@@ -29,3 +29,21 @@ func (r *LidarPackRepositoryImpl) SavePack(ctx context.Context, pack *entity.Lid
 	}
 	return nil
 }
+
+func (r *LidarPackRepositoryImpl) GetProfilesByExperimentID(ctx context.Context, experimentID uint) ([]entity.LidarProfile, error) {
+	op := "LidarPackRepository.GetProfilesByExperimentID"
+	profiles, err := r.DataSource.GetProfilesByExperimentID(ctx, experimentID)
+	if err != nil {
+		return nil, response.InternalError(op, err)
+	}
+	return profiles, nil
+}
+
+func (r *LidarPackRepositoryImpl) GetProfilesByFileID(ctx context.Context, fileID uint) ([]entity.LidarProfile, error) {
+	op := "LidarPackRepository.GetProfilesByFileID"
+	profiles, err := r.DataSource.GetProfilesByFileID(ctx, fileID)
+	if err != nil {
+		return nil, response.InternalError(op, err)
+	}
+	return profiles, nil
+}

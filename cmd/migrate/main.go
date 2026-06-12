@@ -29,6 +29,8 @@ func main() {
 		&dbEntity.LidarFileEntity{},
 		&dbEntity.LidarProfileEntity{},
 		&dbEntity.MeteoRecordEntity{},
+		&dbEntity.ProcessingRunEntity{},
+		&dbEntity.ProcessedSignalEntity{},
 	); err != nil {
 		log.Fatalf("auto-migration failed: %v", err)
 	}

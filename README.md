@@ -93,6 +93,7 @@ docker-compose up -d
 | `POST` | `/experiments` | **admin** | Создать (multipart: `title`, `licelZip`, `licelBgr`, `meteoFile`) |
 | `POST` | `/experiments/:id/prepare` | **admin, manager** | Подготовка данных (JSON: `crop_alt`, `bgr_type`, `bgr_alt`). Асинхронно — статус по `GET /experiments/:id` |
 | `POST` | `/experiments/:id/glue` | **admin, manager** | Склейка каналов (JSON: `wavelengths`, `polarization`, `h1`, `h2`). Асинхронно (`202 Accepted`) |
+| `POST` | `/experiments/:id/process` | **admin, manager** | Запуск алгоритма обработки (JSON: `algorithm`, `params`). Асинхронно — статус по `GET /processing/{id}` |
 
 ### Prepared Experiments (требуется аутентификация)
 
@@ -105,6 +106,7 @@ docker-compose up -d
 | Метод | Путь | Роль | Описание |
 |---|---|---|---|
 | `GET` | `/tasks/:taskID` | Любая | Polling: возвращает статус задачи (`pending`, `processing`, `done`, `failed`) и presigned URL при готовности |
+| `GET` | `/processing/:id` | **admin, manager** | Статус запуска алгоритма обработки
 
 > **GET /prepared/:id** — все параметры query:
 > - `wavelen` (float64, required) — длина волны, например `532`
@@ -128,6 +130,14 @@ docker-compose up -d
 > **POST /experiments/:id/prepare** — асинхронный пайплайн (asynq): вычитание фона (`file`/`avgTail`/`medTail`) → обрезка по высоте → загрузка в Minio (`experiments/{id}/prepared/licel-prepared.zip`). Статус prepared: `staged → removebgr → cropping → done stage 1 → (glue) → done stage 2 → done|failed`.
 
 > **POST /experiments/:id/glue** — асинхронный пайплайн (asynq): склейка каналов для указанных длин волн → перезапись zip → статус `done stage 2`. Ответ: `202 Accepted`.
+
+> **POST /experiments/{id}/process** — единый endpoint для запуска алгоритмов обработки. Параметры:
+> - `algorithm` (string, required) — имя алгоритма: `"stage0"`.
+> - `params` (object, required) — параметры алгоритма. Для `stage0`:
+>   - `background.type` — `"file"`, `"avgtail"`, `"medtail"`.
+>   - `background.bgr_from` — высота начала хвоста для tail-based (в метрах).
+>   - `glue` — массив объектов `{"wavelength", "polarization", "r0", "r1", "scale_to"}`.
+> Статус `ProcessingRun`: `staged → processing → done|failed`. Статус по `GET /processing/{id}`.
 
 > **GET /prepared/:id** — асинхронная визуализация (asynq): возвращает `202 Accepted` с `task_id`. Результат доступен через `GET /tasks/:taskID` (polling).
 
@@ -229,5 +239,4 @@ MIT
 
 
 ## Планы на будущее
-[ ] Gaceful shutdown
-[ ] Обработка данных
+[ ] Graceful shutdown

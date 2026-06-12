@@ -85,7 +85,14 @@ func (rc *RouteConfig) SetupExperimentRoutes(rg chi.Router) {
 			am.Use(middleware.AdminOrManager)
 			am.Post("/{id}/prepare", rc.ExperimentController.Prepare)
 			am.Post("/{id}/glue", rc.ExperimentController.Glue)
+			am.Post("/{id}/process", rc.ExperimentController.Process)
 		})
+	})
+
+	// Processing runs (admin+manager)
+	rg.Route("/processing", func(r chi.Router) {
+		r.Use(middleware.AdminOrManager)
+		r.Get("/{id}", rc.ExperimentController.GetProcessingStatus)
 	})
 
 	// Prepared experiment visualization (admin+manager)

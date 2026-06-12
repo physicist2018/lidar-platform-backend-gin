@@ -7,6 +7,8 @@ const (
 	TypeGlue = "task:glue"
 	// TypeVisualize is the async task for chart generation.
 	TypeVisualize = "task:visualize"
+	// TypeProcess is the async task for algorithm processing (stage0, stage1, ...).
+	TypeProcess = "task:process"
 )
 
 // PreparePayload is the task payload for experiment preprocessing.
@@ -28,6 +30,13 @@ type GluePayload struct {
 	Polarization string    `json:"polarization"`
 	H1           float64   `json:"h1"`
 	H2           float64   `json:"h2"`
+}
+
+// ProcessPayload is the task payload for algorithm processing.
+type ProcessPayload struct {
+	ProcID       uint   `json:"proc_id"`
+	ExperimentID uint   `json:"experiment_id"`
+	Algorithm    string `json:"algorithm"`
 }
 
 // VisualizePayload is the task payload for chart generation.

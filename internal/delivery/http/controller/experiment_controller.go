@@ -29,6 +29,8 @@ type ExperimentController struct {
 	GetAllExperimentsUC           usecase.GetAllExperimentsUseCase
 	GetExperimentChannelsUC       usecase.GetExperimentChannelsUseCase
 	PrepareExperimentUC           usecase.PrepareExperimentUseCase
+	ProcessExperimentUC           usecase.ProcessExperimentUseCase
+	GetProcessingRunStatusUC      usecase.GetProcessingRunStatusUseCase
 	VisualizePreparedExperimentUC usecase.VisualizePreparedExperimentUseCase
 	GluePreparedExperimentUC      usecase.GluePreparedExperimentUseCase
 	TaskStore                     *queue.TaskStore
@@ -42,6 +44,8 @@ func NewExperimentController(
 	getAll usecase.GetAllExperimentsUseCase,
 	getChannels usecase.GetExperimentChannelsUseCase,
 	prepare usecase.PrepareExperimentUseCase,
+	process usecase.ProcessExperimentUseCase,
+	getProcessStatus usecase.GetProcessingRunStatusUseCase,
 	visualize usecase.VisualizePreparedExperimentUseCase,
 	glue usecase.GluePreparedExperimentUseCase,
 	taskStore *queue.TaskStore,
@@ -54,6 +58,8 @@ func NewExperimentController(
 		GetAllExperimentsUC:           getAll,
 		GetExperimentChannelsUC:       getChannels,
 		PrepareExperimentUC:           prepare,
+		ProcessExperimentUC:           process,
+		GetProcessingRunStatusUC:      getProcessStatus,
 		VisualizePreparedExperimentUC: visualize,
 		GluePreparedExperimentUC:      glue,
 		TaskStore:                     taskStore,
@@ -399,22 +405,107 @@ func (ctrl *ExperimentController) GetTaskStatus(w http.ResponseWriter, r *http.R
 	})
 }
 
-// Glue godoc
+// Process godoc
 //
-//	@Summary		Glue experiment channels
-//	@Description	Starts asynchronous channel gluing for specified wavelengths and altitude range.
+//	@Summary		Run processing algorithm on experiment
+//	@Description	Starts an async processing run (stage0, stage1, ...) on the experiment.
 //	@Tags			experiments
 //	@Accept			json
 //	@Produce		json
 //	@Security		BearerAuth
-//	@Param			id		path		uint	true	"Experiment ID"
-//	@Param			body	body		dto.GlueExperimentBody	true	"Glue parameters: wavelengths, polarization, altitude range h1-h2"
-//	@Success		202		{object}	dto.MessageResponse	"Glue task submitted"
+//	@Param			id		path		uint					true	"Experiment ID"
+//	@Param			body	body		dto.ProcessExperimentBody	true	"Processing parameters"
+//	@Success		201		{object}	dto.ProcessingRunResponse
 //	@Failure		400		{object}	dto.ErrorResponse	"Bad request"
 //	@Failure		401		{object}	dto.ErrorResponse	"Unauthorized"
-//	@Failure		409		{object}	dto.ErrorResponse	"Invalid experiment status"
+//	@Failure		404		{object}	dto.ErrorResponse	"Experiment not found"
+//	@Failure		409		{object}	dto.ErrorResponse	"Experiment not ready"
 //	@Failure		500		{object}	dto.ErrorResponse	"Internal server error"
-//	@Router			/experiments/{id}/glue [post]
+//	@Router			/experiments/{id}/process [post]
+func (ctrl *ExperimentController) Process(w http.ResponseWriter, r *http.Request) {
+	claims := middleware.GetClaims(r)
+
+	idStr := chi.URLParam(r, "id")
+	experimentID, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, fmt.Sprintf("invalid experiment id: %s", idStr))
+		return
+	}
+
+	var body dto.ProcessExperimentBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := ctrl.Validate.Struct(&body); err != nil {
+		response.Error(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	run, err := ctrl.ProcessExperimentUC.Execute(
+		r.Context(),
+		claims.UserID,
+		uint(experimentID),
+		body.Algorithm,
+		body.Params,
+	)
+	if err != nil {
+		code := http.StatusInternalServerError
+		if ce, ok := err.(interface{ StatusCode() int }); ok {
+			code = ce.StatusCode()
+		}
+		response.Error(w, code, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusCreated, mapper.ToProcessingRunResponse(run))
+}
+
+// GetProcessingStatus godoc
+//
+//	@Summary		Get processing run status
+//	@Description	Returns the current status of a processing run.
+//	@Tags			experiments
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id	path		uint	true	"Processing Run ID"
+//	@Success		200	{object}	dto.ProcessingRunResponse
+//	@Failure		400	{object}	dto.ErrorResponse	"Bad request"
+//	@Failure		401	{object}	dto.ErrorResponse	"Unauthorized"
+//	@Failure		404	{object}	dto.ErrorResponse	"Not found"
+//	@Failure		500	{object}	dto.ErrorResponse	"Internal server error"
+//	@Router			/processing/{id} [get]
+func (ctrl *ExperimentController) GetProcessingStatus(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := parseUint(idStr)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	run, err := ctrl.GetProcessingRunStatusUC.Execute(r.Context(), id)
+	if err != nil {
+		response.Error(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, mapper.ToProcessingRunResponse(run))
+}
+
+// @Summary		Glue experiment channels
+// @Description	Starts asynchronous channel gluing for specified wavelengths and altitude range.
+// @Tags			experiments
+// @Accept			json
+// @Produce		json
+// @Security		BearerAuth
+// @Param			id		path		uint	true	"Experiment ID"
+// @Param			body	body		dto.GlueExperimentBody	true	"Glue parameters: wavelengths, polarization, altitude range h1-h2"
+// @Success		202		{object}	dto.MessageResponse	"Glue task submitted"
+// @Failure		400		{object}	dto.ErrorResponse	"Bad request"
+// @Failure		401		{object}	dto.ErrorResponse	"Unauthorized"
+// @Failure		409		{object}	dto.ErrorResponse	"Invalid experiment status"
+// @Failure		500		{object}	dto.ErrorResponse	"Internal server error"
+// @Router			/experiments/{id}/glue [post]
 func (ctrl *ExperimentController) Glue(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	experimentID, err := strconv.ParseUint(idStr, 10, 64)

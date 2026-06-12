@@ -11,10 +11,11 @@ import (
 	"time"
 
 	"github.com/hibiken/asynq"
-	"github.com/physicist2018/licelfile/v2/licelformat"
 	"github.com/sirupsen/logrus"
 
+	"github.com/physicist2018/licelfile/v2/licelformat"
 	"github.com/physicist2018/lidar-platform-go/internal/domain/entity"
+	"github.com/physicist2018/lidar-platform-go/internal/domain/processing"
 	"github.com/physicist2018/lidar-platform-go/internal/domain/repository"
 	"github.com/physicist2018/lidar-platform-go/internal/infrastructure/storage"
 	"github.com/physicist2018/lidar-platform-go/pkg/visualize"
@@ -27,11 +28,16 @@ const (
 
 // HandlerDeps holds all dependencies needed by the async task handlers.
 type HandlerDeps struct {
-	PrepRepo  repository.PreparedExperimentRepository
-	ChartRepo repository.ExperimentChartRepository
-	Minio     *storage.MinioClient
-	TaskStore *TaskStore
-	Log       *logrus.Logger
+	PrepRepo      repository.PreparedExperimentRepository
+	ChartRepo     repository.ExperimentChartRepository
+	ProcRunRepo   repository.ProcessingRunRepository
+	ProcSigRepo   repository.ProcessedSignalRepository
+	ExpRepo       repository.ExperimentRepository
+	LidarPackRepo repository.LidarPackRepository
+	ProcessorReg  *processing.Registry
+	Minio         *storage.MinioClient
+	TaskStore     *TaskStore
+	Log           *logrus.Logger
 }
 
 // NewServeMux registers all task handlers and returns the mux.
@@ -40,10 +46,78 @@ func NewServeMux(deps *HandlerDeps) *asynq.ServeMux {
 	mux.HandleFunc(TypePrepare, deps.handlePrepare)
 	mux.HandleFunc(TypeGlue, deps.handleGlue)
 	mux.HandleFunc(TypeVisualize, deps.handleVisualize)
+	mux.HandleFunc(TypeProcess, deps.handleProcess)
 	return mux
 }
 
 // ---------- Prepare handler ----------
+
+// ---------- Process handler (stage0, stage1, ...) ----------
+
+func (d *HandlerDeps) handleProcess(ctx context.Context, t *asynq.Task) error {
+	var payload ProcessPayload
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return fmt.Errorf("unmarshal process payload: %w", err)
+	}
+
+	log := d.Log.WithFields(logrus.Fields{
+		"task_id":       t.ResultWriter().TaskID(),
+		"proc_id":       payload.ProcID,
+		"experiment_id": payload.ExperimentID,
+		"algorithm":     payload.Algorithm,
+	})
+
+	log.Info("starting algorithm processing")
+
+	// 1. Load the processing run
+	run, err := d.ProcRunRepo.FindByID(ctx, payload.ProcID)
+	if err != nil {
+		return fmt.Errorf("find processing run: %w", err)
+	}
+
+	// 2. Update status → processing
+	if err := d.ProcRunRepo.Update(ctx, &entity.ProcessingRun{
+		ID:     run.ID,
+		Status: entity.ProcStatusProcessing,
+	}); err != nil {
+		return d.setProcRunFailed(ctx, run.ID, fmt.Sprintf("update status: %s", err.Error()))
+	}
+
+	// 3. Lookup the processor by algorithm name
+	processor, err := d.ProcessorReg.Get(payload.Algorithm)
+	if err != nil {
+		return d.setProcRunFailed(ctx, run.ID, fmt.Sprintf("unknown algorithm: %s", err.Error()))
+	}
+
+	// 4. Execute the algorithm
+	if err := processor.Execute(ctx, run); err != nil {
+		return d.setProcRunFailed(ctx, run.ID, fmt.Sprintf("algorithm execution: %s", err.Error()))
+	}
+
+	// 5. Update status → done
+	if err := d.ProcRunRepo.Update(ctx, &entity.ProcessingRun{
+		ID:     run.ID,
+		Status: entity.ProcStatusDone,
+	}); err != nil {
+		return d.setProcRunFailed(ctx, run.ID, fmt.Sprintf("update status: %s", err.Error()))
+	}
+
+	log.Info("algorithm processing completed successfully")
+	return nil
+}
+
+func (d *HandlerDeps) setProcRunFailed(ctx context.Context, procID uint, errMsg string) error {
+	log := d.Log.WithField("proc_id", procID).WithError(fmt.Errorf("%s", errMsg))
+	log.Error("process task failed")
+	if err := d.ProcRunRepo.Update(ctx, &entity.ProcessingRun{
+		ID:       procID,
+		Status:   entity.ProcStatusFailed,
+		ErrorMsg: errMsg,
+	}); err != nil {
+		log.WithError(err).Error("failed to set processing run status to failed")
+	}
+	return fmt.Errorf("process failed for proc %d: %s", procID, errMsg)
+}
 
 func (d *HandlerDeps) handlePrepare(ctx context.Context, t *asynq.Task) error {
 	var payload PreparePayload

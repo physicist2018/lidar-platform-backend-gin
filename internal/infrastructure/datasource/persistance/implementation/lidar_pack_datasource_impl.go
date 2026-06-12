@@ -76,6 +76,72 @@ func (d *LidarPackDataSourceImpl) SavePack(ctx context.Context, pack *entity.Lid
 	return nil
 }
 
+// GetProfilesByExperimentID loads all profiles from the main data pack for the experiment.
+func (d *LidarPackDataSourceImpl) GetProfilesByExperimentID(ctx context.Context, experimentID uint) ([]entity.LidarProfile, error) {
+	var pack dbEntity.LidarPackEntity
+	// Load the main data pack (PackType="data" or empty) with its files and profiles
+	if err := d.DB.WithContext(ctx).
+		Where("experiment_id = ? AND (pack_type = ? OR pack_type = ?)", experimentID, "data", "").
+		Preload("Files", func(db *gorm.DB) *gorm.DB {
+			return db.Preload("Profiles")
+		}).
+		First(&pack).Error; err != nil {
+		return nil, fmt.Errorf("load data pack for experiment %d: %w", experimentID, err)
+	}
+
+	var profiles []entity.LidarProfile
+	for _, file := range pack.Files {
+		for _, p := range file.Profiles {
+			profiles = append(profiles, toLidarProfileDomain(&p))
+		}
+	}
+	return profiles, nil
+}
+
+// GetProfilesByFileID loads all profiles for a specific lidar file.
+func (d *LidarPackDataSourceImpl) GetProfilesByFileID(ctx context.Context, fileID uint) ([]entity.LidarProfile, error) {
+	var dbProfiles []dbEntity.LidarProfileEntity
+	if err := d.DB.WithContext(ctx).
+		Where("file_id = ?", fileID).
+		Find(&dbProfiles).Error; err != nil {
+		return nil, fmt.Errorf("load profiles for file %d: %w", fileID, err)
+	}
+
+	profiles := make([]entity.LidarProfile, len(dbProfiles))
+	for i := range dbProfiles {
+		profiles[i] = toLidarProfileDomain(&dbProfiles[i])
+	}
+	return profiles, nil
+}
+
+func toLidarProfileDomain(p *dbEntity.LidarProfileEntity) entity.LidarProfile {
+	reserved := make([]int, 0)
+	if len(p.Reserved) > 0 {
+		_ = json.Unmarshal(p.Reserved, &reserved)
+	}
+	return entity.LidarProfile{
+		ID:           p.ID,
+		FileID:       p.FileID,
+		Active:       p.Active,
+		IsPhoton:     p.IsPhoton,
+		LaserType:    p.LaserType,
+		NDataPoints:  p.NDataPoints,
+		Reserved:     reserved,
+		HighVoltage:  p.HighVoltage,
+		BinWidth:     p.BinWidth,
+		Wavelength:   p.Wavelength,
+		Polarization: p.Polarization,
+		BinShift:     p.BinShift,
+		DecBinShift:  p.DecBinShift,
+		AdcBits:      p.AdcBits,
+		NShots:       p.NShots,
+		DiscrLevel:   p.DiscrLevel,
+		DeviceID:     p.DeviceID,
+		NCrate:       p.NCrate,
+		Signal:       []float64(p.Signal),
+	}
+}
+
 // toLidarFileEntity converts domain LidarFile to GORM entity.
 func toLidarFileEntity(packID uint, df *entity.LidarFile) *dbEntity.LidarFileEntity {
 	return &dbEntity.LidarFileEntity{
