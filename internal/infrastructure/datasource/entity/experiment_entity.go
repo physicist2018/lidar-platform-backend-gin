@@ -14,6 +14,8 @@ type ExperimentEntity struct {
 	Comments             string         `gorm:"type:text"`
 	MeasurementStartTime *time.Time     `gorm:"default:null"`
 	MeasurementStopTime  *time.Time     `gorm:"default:null"`
+	LidarPackID          *uint          `gorm:"default:null;index"`
+	BgrFileID            *uint          `gorm:"default:null;index"`
 	LicelZipPath         string         `gorm:"size:500"`
 	LicelBgrPath         string         `gorm:"size:500"`
 	MeteoFilePath        string         `gorm:"size:500"`

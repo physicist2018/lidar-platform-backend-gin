@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] — 2026-06-12
+
+### Added
+
+- **`LidarPackEntity.PackType` field** (`data` / `bgr`) to distinguish data archives from background (BGR) files.
+- **`ExperimentEntity.LidarPackID`** — nullable FK to `lidar_packs.id` referencing the data pack.
+- **`ExperimentEntity.BgrFileID`** — nullable FK to `lidar_files.id` referencing the background file.
+- **`licel.FromLicelFile`** converter — builds a `LidarPack` with `PackType="bgr"` from a single `licelformat.LicelFile`.
+- **Background file handling in `CreateExperimentUseCaseImpl.preprocess`**:
+  - BGR file is parsed via `licelformat.LoadLicelFile` as a full licel file with profiles.
+  - Saved as a separate `LidarPack` with `PackType="bgr"` via existing `SavePack`.
+  - `LidarPackID` and `BgrFileID` are persisted on the experiment.
+- **Backward compatibility** — `LicelZipPath` / `LicelBgrPath` string fields are preserved.
+
 ## [1.6.0] — 2026-06-11
 
 ### Added

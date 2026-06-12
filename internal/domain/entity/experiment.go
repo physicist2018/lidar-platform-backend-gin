@@ -32,6 +32,8 @@ type Experiment struct {
 	Comments             string              `json:"comments"`
 	MeasurementStartTime *time.Time          `json:"measurement_start_time,omitempty"`
 	MeasurementStopTime  *time.Time          `json:"measurement_stop_time,omitempty"`
+	LidarPackID          *uint               `json:"lidar_pack_id,omitempty"`
+	BgrFileID            *uint               `json:"bgr_file_id,omitempty"`
 	LicelZipPath         string              `json:"licel_zip_path"`
 	LicelBgrPath         string              `json:"licel_bgr_path"`
 	MeteoFilePath        string              `json:"meteo_file_path"`

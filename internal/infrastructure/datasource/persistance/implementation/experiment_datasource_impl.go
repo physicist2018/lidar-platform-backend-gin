@@ -61,6 +61,12 @@ func (d *ExperimentDataSourceImpl) Update(ctx context.Context, exp *entity.Exper
 	if exp.MeasurementStopTime != nil {
 		updates["measurement_stop_time"] = *exp.MeasurementStopTime
 	}
+	if exp.LidarPackID != nil {
+		updates["lidar_pack_id"] = *exp.LidarPackID
+	}
+	if exp.BgrFileID != nil {
+		updates["bgr_file_id"] = *exp.BgrFileID
+	}
 	if exp.LicelZipPath != "" {
 		updates["licel_zip_path"] = exp.LicelZipPath
 	}
@@ -149,6 +155,8 @@ func toExperimentDomain(dbExp *dbEntity.ExperimentEntity) entity.Experiment {
 		Comments:             dbExp.Comments,
 		MeasurementStartTime: dbExp.MeasurementStartTime,
 		MeasurementStopTime:  dbExp.MeasurementStopTime,
+		LidarPackID:          dbExp.LidarPackID,
+		BgrFileID:            dbExp.BgrFileID,
 		LicelZipPath:         dbExp.LicelZipPath,
 		LicelBgrPath:         dbExp.LicelBgrPath,
 		MeteoFilePath:        dbExp.MeteoFilePath,

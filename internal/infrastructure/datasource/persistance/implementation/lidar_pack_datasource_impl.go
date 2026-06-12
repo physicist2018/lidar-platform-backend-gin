@@ -30,6 +30,7 @@ func NewLidarPackDataSourceImpl(db *gorm.DB, log *logrus.Logger) *LidarPackDataS
 func (d *LidarPackDataSourceImpl) SavePack(ctx context.Context, pack *entity.LidarPack) error {
 	packEntity := &dbEntity.LidarPackEntity{
 		ExperimentID: pack.ExperimentID,
+		PackType:     pack.PackType,
 		StartTime:    pack.StartTime,
 		StopTime:     pack.StopTime,
 	}

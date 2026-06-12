@@ -5,6 +5,7 @@ import "time"
 type LidarPackEntity struct {
 	ID           uint              `gorm:"primaryKey"`
 	ExperimentID uint              `gorm:"not null;index"`
+	PackType     string            `gorm:"size:20;not null;default:data"`
 	StartTime    *time.Time        `gorm:"default:null"`
 	StopTime     *time.Time        `gorm:"default:null"`
 	CreatedAt    time.Time         `gorm:"autoCreateTime"`

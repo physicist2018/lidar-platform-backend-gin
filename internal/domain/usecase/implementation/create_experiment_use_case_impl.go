@@ -150,6 +150,29 @@ func (u *createExperimentUseCaseImpl) preprocess(expID uint, tempDir, zipPath, b
 	}
 	log.WithField("pack_id", lidarPack.ID).Info("lidar pack saved to db")
 
+	// 2.7 Save BGR file as a separate LidarPack with PackType="bgr"
+	bgrLicelFile, err := licelformat.LoadLicelFile(bgrPath)
+	if err != nil {
+		log.WithError(err).Error("failed to parse bgr licel file")
+		u.setFailed(ctx, expID, err.Error())
+		return
+	}
+
+	bgrPack := licel.FromLicelFile(expID, filepath.Base(bgrPath), &bgrLicelFile)
+	if err := u.lidarPackRepo.SavePack(ctx, bgrPack); err != nil {
+		log.WithError(err).Error("failed to save bgr pack to db")
+		u.setFailed(ctx, expID, err.Error())
+		return
+	}
+	bgrFileID := bgrPack.Files[0].ID
+	log.WithFields(logrus.Fields{
+		"bgr_pack_id": bgrPack.ID,
+		"bgr_file_id": bgrFileID,
+	}).Info("bgr file saved to db")
+
+	// 2.8 Save LidarPackID
+	lidarPackID := lidarPack.ID
+
 	// 3. Upload files to Minio
 	basePath := fmt.Sprintf("experiments/%d/source", expID)
 	zipObject := basePath + "/licel.zip"
@@ -178,6 +201,8 @@ func (u *createExperimentUseCaseImpl) preprocess(expID uint, tempDir, zipPath, b
 		Status:               entity.StatusDone,
 		MeasurementStartTime: &minStart,
 		MeasurementStopTime:  &maxStop,
+		LidarPackID:          &lidarPackID,
+		BgrFileID:            &bgrFileID,
 		LicelZipPath:         zipObject,
 		LicelBgrPath:         bgrObject,
 		MeteoFilePath:        meteoObject,

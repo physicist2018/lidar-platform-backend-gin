@@ -6,6 +6,7 @@ import "time"
 type LidarPack struct {
 	ID           uint        `json:"id"`
 	ExperimentID uint        `json:"experiment_id"`
+	PackType     string      `json:"pack_type"`
 	StartTime    *time.Time  `json:"start_time,omitempty"`
 	StopTime     *time.Time  `json:"stop_time,omitempty"`
 	CreatedAt    time.Time   `json:"created_at"`
