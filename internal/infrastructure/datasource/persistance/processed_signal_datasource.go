@@ -9,5 +9,6 @@ import (
 type ProcessedSignalDataSource interface {
 	BatchCreate(ctx context.Context, signals []entity.ProcessedSignal) error
 	GetByProcessingRunID(ctx context.Context, runID uint) ([]entity.ProcessedSignal, error)
+	GetByProcessingRunIDFiltered(ctx context.Context, runID uint, filter entity.ProcessedSignalFilter) ([]entity.ProcessedSignal, error)
 	DeleteByProcessingRunIDs(ctx context.Context, runIDs []uint) error
 }

@@ -221,10 +221,11 @@ func Initialize(cfg *Config) (*BootstrapConfig, error) {
 	// Use cases
 	processExpUC := usecaseImpl.NewProcessExperimentUseCaseImpl(expRepo, procRunRepo, queueClient, log)
 	getProcessingStatusUC := usecaseImpl.NewGetProcessingRunStatusUseCaseImpl(procRunRepo, log)
+	getStage0DataUC := usecaseImpl.NewGetStage0DataUseCaseImpl(procRunRepo, procSigRepo, expRepo, log)
 
 	expController := controller.NewExperimentController(
 		log, createExpUC, getExpByIDUC, getAllExpUC, getExpChannelsUC,
-		processExpUC, getProcessingStatusUC, validate,
+		processExpUC, getProcessingStatusUC, getStage0DataUC, validate,
 	)
 
 	route.NewRouteConfig(router, cfg.JWTSecret, userController, authController, expController).Setup()

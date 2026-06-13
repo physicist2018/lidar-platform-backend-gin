@@ -89,6 +89,7 @@ func (p *Stage0Processor) Execute(ctx context.Context, run *entity.ProcessingRun
 		signals[i] = entity.ProcessedSignal{
 			ProcessingRunID:   run.ID,
 			OriginalProfileID: prof.ID,
+			FileID:            prof.FileID,
 			Wavelength:        prof.Wavelength,
 			Polarization:      prof.Polarization,
 			IsPhoton:          prof.IsPhoton,
@@ -231,161 +232,185 @@ func (p *Stage0Processor) subtractBackground(
 }
 
 // glueChannels performs analog/digital channel gluing for specified parameters.
-// Returns profiles + newly created glued profiles with DeviceID="BG".
+// For each file in the experiment, it finds pairs of profiles with matching
+// (wavelength, polarization), where one has DeviceID="BT" (analog) and the other
+// has DeviceID="BC" (digital). These are glued together into a new profile
+// with DeviceID="BG".
+// Returns profiles + newly created glued profiles.
 // Original profiles are NOT modified.
 func (p *Stage0Processor) glueChannels(
 	profiles []entity.LidarProfile,
 	glueParams []entity.GlueParam,
 ) ([]entity.LidarProfile, error) {
-	// Build a map of profiles by (wavelength, polarization, isPhoton)
-	profileMap := make(map[string]int) // key → index in profiles
+	// Group profiles by FileID
+	type fileGroup struct {
+		profiles []entity.LidarProfile
+		indices  []int // indices into the original profiles slice
+	}
+
+	fileMap := make(map[uint]*fileGroup)
 	for i := range profiles {
-		key := channelKey(profiles[i].Wavelength, profiles[i].Polarization, profiles[i].IsPhoton)
-		profileMap[key] = i
+		prof := &profiles[i]
+		fg, ok := fileMap[prof.FileID]
+		if !ok {
+			fg = &fileGroup{}
+			fileMap[prof.FileID] = fg
+		}
+		fg.profiles = append(fg.profiles, *prof)
+		fg.indices = append(fg.indices, i)
+	}
+
+	// deviceKey creates a lookup key: "wavelength|polarization|deviceID"
+	deviceKey := func(wavelength float64, polarization string, deviceID string) string {
+		return fmt.Sprintf("%.1f|%s|%s", wavelength, polarization, deviceID)
 	}
 
 	var newProfiles []entity.LidarProfile
 
-	for _, gp := range glueParams {
-		analogKey := channelKey(gp.Wavelength, gp.Polarization, false)
-		digitalKey := channelKey(gp.Wavelength, gp.Polarization, true)
+	for _, fg := range fileMap {
+		// Build lookup: deviceKey → index within this file group
+		lookup := make(map[string]int) // key → index in fg.profiles
+		for i := range fg.profiles {
+			key := deviceKey(fg.profiles[i].Wavelength, fg.profiles[i].Polarization, fg.profiles[i].DeviceID)
+			lookup[key] = i
+		}
 
-		analogIdx, okAnalog := profileMap[analogKey]
-		digitalIdx, okDigital := profileMap[digitalKey]
+		for _, gp := range glueParams {
+			btKey := deviceKey(gp.Wavelength, gp.Polarization, "BT")
+			bcKey := deviceKey(gp.Wavelength, gp.Polarization, "BC")
 
-		if !okAnalog || !okDigital {
-			// Try with empty polarization
-			analogKey2 := channelKey(gp.Wavelength, "", false)
-			digitalKey2 := channelKey(gp.Wavelength, "", true)
+			btIdx, okBT := lookup[btKey]
+			bcIdx, okBC := lookup[bcKey]
 
-			if !okAnalog {
-				analogIdx, okAnalog = profileMap[analogKey2]
+			if !okBT || !okBC {
+				// Try with empty polarization
+				if !okBT {
+					btKey2 := deviceKey(gp.Wavelength, "", "BT")
+					btIdx, okBT = lookup[btKey2]
+				}
+				if !okBC {
+					bcKey2 := deviceKey(gp.Wavelength, "", "BC")
+					bcIdx, okBC = lookup[bcKey2]
+				}
+
+				if !okBT || !okBC {
+					p.log.WithFields(logrus.Fields{
+						"wavelength":   gp.Wavelength,
+						"polarization": gp.Polarization,
+					}).Warn("cannot glue — missing BT (analog) or BC (digital) profile in file")
+					continue
+				}
 			}
-			if !okDigital {
-				digitalIdx, okDigital = profileMap[digitalKey2]
-			}
 
-			if !okAnalog || !okDigital {
-				p.log.WithFields(logrus.Fields{
-					"wavelength":   gp.Wavelength,
-					"polarization": gp.Polarization,
-				}).Warn("cannot glue — missing analog or digital channel")
+			btProf := &fg.profiles[btIdx]
+			bcProf := &fg.profiles[bcIdx]
+
+			// Calculate overlap indices from altitude range [r0, r1]
+			binWidth := btProf.BinWidth
+			if binWidth <= 0 {
+				binWidth = bcProf.BinWidth
+			}
+			if binWidth <= 0 {
 				continue
 			}
-		}
 
-		analogProf := &profiles[analogIdx]
-		digitalProf := &profiles[digitalIdx]
+			r0Idx := int(math.Ceil(gp.R0 / binWidth))
+			r1Idx := int(math.Ceil(gp.R1 / binWidth))
 
-		// Calculate overlap indices from altitude range [r0, r1]
-		binWidth := analogProf.BinWidth
-		if binWidth <= 0 {
-			binWidth = digitalProf.BinWidth
-		}
-		if binWidth <= 0 {
-			continue
-		}
-
-		r0Idx := int(math.Ceil(gp.R0 / binWidth))
-		r1Idx := int(math.Ceil(gp.R1 / binWidth))
-
-		// Clamp to profile bounds
-		maxLen := len(analogProf.Signal)
-		if len(digitalProf.Signal) < maxLen {
-			maxLen = len(digitalProf.Signal)
-		}
-		if r0Idx >= maxLen {
-			r0Idx = maxLen - 1
-		}
-		if r1Idx > maxLen {
-			r1Idx = maxLen
-		}
-		if r0Idx >= r1Idx {
-			continue
-		}
-
-		// Compute scaling factor: k = mean(analog[r0:r1]) / mean(digital[r0:r1])
-		meanAnalog := mean(analogProf.Signal[r0Idx:r1Idx])
-		meanDigital := mean(digitalProf.Signal[r0Idx:r1Idx])
-
-		if meanDigital == 0 {
-			p.log.Warn("digital mean is zero, skipping glue")
-			continue
-		}
-
-		k := meanAnalog / meanDigital
-
-		// Build the glued signal
-		gluedSig := make([]float64, maxLen)
-
-		// Determine which original profile to copy metadata from
-		// When scaling to "analog", the glued profile inherits analog metadata.
-		// When scaling to "digital", it inherits digital metadata.
-		var template *entity.LidarProfile
-		if gp.ScaleTo == "analog" {
-			template = analogProf
-		} else {
-			template = digitalProf
-		}
-
-		switch gp.ScaleTo {
-		case "analog":
-			// analog[0:r0] + digital_scaled[r0:]
-			for j := 0; j < r0Idx && j < len(analogProf.Signal); j++ {
-				gluedSig[j] = analogProf.Signal[j]
+			// Clamp to profile bounds
+			maxLen := len(btProf.Signal)
+			if len(bcProf.Signal) < maxLen {
+				maxLen = len(bcProf.Signal)
 			}
-			for j := r0Idx; j < maxLen && j < len(digitalProf.Signal); j++ {
-				gluedSig[j] = digitalProf.Signal[j] * k
+			if r0Idx >= maxLen {
+				r0Idx = maxLen - 1
+			}
+			if r1Idx > maxLen {
+				r1Idx = maxLen
+			}
+			if r0Idx >= r1Idx {
+				continue
 			}
 
-		case "digital":
-			// analog_scaled[0:r0] + digital[r0:]
-			for j := 0; j < r0Idx && j < len(analogProf.Signal); j++ {
-				gluedSig[j] = analogProf.Signal[j] / k
-			}
-			for j := r0Idx; j < maxLen && j < len(digitalProf.Signal); j++ {
-				gluedSig[j] = digitalProf.Signal[j]
-			}
-		}
+			// Compute scaling factor: k = mean(BT[r0:r1]) / mean(BC[r0:r1])
+			meanBT := mean(btProf.Signal[r0Idx:r1Idx])
+			meanBC := mean(bcProf.Signal[r0Idx:r1Idx])
 
-		// Create a new profile with DeviceID="BG"
-		gluedProfile := entity.LidarProfile{
-			ID:           0, // will be ignored on save (maps to processed_signals.original_profile_id)
-			Active:       template.Active,
-			IsPhoton:     template.IsPhoton,
-			LaserType:    template.LaserType,
-			NDataPoints:  template.NDataPoints,
-			Reserved:     template.Reserved,
-			HighVoltage:  template.HighVoltage,
-			BinWidth:     template.BinWidth,
-			Wavelength:   template.Wavelength,
-			Polarization: template.Polarization,
-			BinShift:     template.BinShift,
-			DecBinShift:  template.DecBinShift,
-			AdcBits:      template.AdcBits,
-			NShots:       template.NShots,
-			DiscrLevel:   template.DiscrLevel,
-			DeviceID:     "BG",
-			NCrate:       template.NCrate,
-			Signal:       gluedSig,
-		}
-		newProfiles = append(newProfiles, gluedProfile)
+			if meanBC == 0 {
+				p.log.Warn("BC (digital) mean is zero, skipping glue")
+				continue
+			}
 
-		p.log.WithFields(logrus.Fields{
-			"wavelength":   gp.Wavelength,
-			"polarization": gp.Polarization,
-			"scale_to":     gp.ScaleTo,
-			"k":            k,
-			"len":          maxLen,
-		}).Info("glued profile created")
+			k := meanBT / meanBC
+
+			// Build the glued signal
+			gluedSig := make([]float64, maxLen)
+
+			// Determine which profile to copy metadata from
+			// "analog" → BT; "digital" → BC
+			var template *entity.LidarProfile
+			if gp.ScaleTo == "analog" {
+				template = btProf
+			} else {
+				template = bcProf
+			}
+
+			switch gp.ScaleTo {
+			case "analog":
+				// BT[0:r0] + BC_scaled[r0:]
+				for j := 0; j < r0Idx && j < len(btProf.Signal); j++ {
+					gluedSig[j] = btProf.Signal[j]
+				}
+				for j := r0Idx; j < maxLen && j < len(bcProf.Signal); j++ {
+					gluedSig[j] = bcProf.Signal[j] * k
+				}
+
+			case "digital":
+				// BT_scaled[0:r0] + BC[r0:]
+				for j := 0; j < r0Idx && j < len(btProf.Signal); j++ {
+					gluedSig[j] = btProf.Signal[j] / k
+				}
+				for j := r0Idx; j < maxLen && j < len(bcProf.Signal); j++ {
+					gluedSig[j] = bcProf.Signal[j]
+				}
+			}
+
+			// Create a new profile with DeviceID="BG"
+			gluedProfile := entity.LidarProfile{
+				ID:           0, // will be ignored on save (maps to processed_signals.original_profile_id)
+				FileID:       template.FileID,
+				Active:       template.Active,
+				IsPhoton:     template.IsPhoton,
+				LaserType:    template.LaserType,
+				NDataPoints:  template.NDataPoints,
+				Reserved:     template.Reserved,
+				HighVoltage:  template.HighVoltage,
+				BinWidth:     template.BinWidth,
+				Wavelength:   template.Wavelength,
+				Polarization: template.Polarization,
+				BinShift:     template.BinShift,
+				DecBinShift:  template.DecBinShift,
+				AdcBits:      template.AdcBits,
+				NShots:       template.NShots,
+				DiscrLevel:   template.DiscrLevel,
+				DeviceID:     "BG",
+				NCrate:       template.NCrate,
+				Signal:       gluedSig,
+			}
+			newProfiles = append(newProfiles, gluedProfile)
+
+			p.log.WithFields(logrus.Fields{
+				"file_id":      fg.profiles[0].FileID,
+				"wavelength":   gp.Wavelength,
+				"polarization": gp.Polarization,
+				"scale_to":     gp.ScaleTo,
+				"k":            k,
+				"len":          maxLen,
+			}).Info("glued profile created")
+		}
 	}
 
 	return append(profiles, newProfiles...), nil
-}
-
-// channelKey creates a lookup key for a profile.
-func channelKey(wavelength float64, polarization string, isPhoton bool) string {
-	return fmt.Sprintf("%.1f|%s|%v", wavelength, polarization, isPhoton)
 }
 
 func avg(data []float64) float64 {

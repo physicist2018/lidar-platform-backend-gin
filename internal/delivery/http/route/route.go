@@ -88,4 +88,10 @@ func (rc *RouteConfig) SetupExperimentRoutes(rg chi.Router) {
 		r.Get("/{id}", rc.ExperimentController.GetProcessingStatus)
 	})
 
+	// Results endpoints (admin+manager)
+	rg.Route("/results", func(r chi.Router) {
+		r.Use(middleware.AdminOrManager)
+		r.Post("/{stage}/data", rc.ExperimentController.GetStage0Data)
+	})
+
 }

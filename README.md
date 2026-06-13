@@ -99,6 +99,12 @@ docker-compose up -d
 |---|---|---|---|
 | `GET` | `/processing/:id` | **admin, manager** | Статус запуска алгоритма обработки
 
+### Results (требуется аутентификация, admin/manager)
+
+| Метод | Путь | Роль | Описание |
+|---|---|---|---|
+| `POST` | `/results/{stage}/data` | **admin, manager** | Получение stage0-данных: distance, 2D data, time. Фильтры: `wavelength` (default 532), `polarization` (default p), `device_id` (default BT), `time_from`/`time_to` (RFC3339, по умолчанию — весь эксперимент)
+
 > **POST /experiments/{id}/process** — единый endpoint для запуска алгоритмов обработки. Параметры:
 > - `algorithm` (string, required) — имя алгоритма: `"stage0"`.
 > - `params` (object, required) — параметры алгоритма. Для `stage0`:

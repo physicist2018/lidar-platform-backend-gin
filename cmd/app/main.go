@@ -15,7 +15,7 @@ import (
 )
 
 // @title						Lidar Platform API
-// @version					1.0
+// @version					2.4.0
 // @description				REST API for the Lidar Platform — user management, experiment processing.
 // @contact.name				API Support
 // @contact.email				kshmirko@dvo.ru

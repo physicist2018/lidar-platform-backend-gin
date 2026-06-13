@@ -488,6 +488,94 @@ const docTemplate = `{
                 }
             }
         },
+        "/results/{stage}/data": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns distance axis, time series, and a 2D array of processed signals for a stage0 run.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "results"
+                ],
+                "summary": "Get stage0 processed data",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Processing run ID",
+                        "name": "stage",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "number",
+                        "description": "Wavelength (default: 532)",
+                        "name": "wavelength",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Polarization (default: p)",
+                        "name": "polarization",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device ID (default: BT)",
+                        "name": "device_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start time in RFC3339 format",
+                        "name": "time_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End time in RFC3339 format",
+                        "name": "time_to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.Stage0DataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "security": [
@@ -1063,6 +1151,36 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_physicist2018_lidar-platform-go_pkg_dto.Stage0DataResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "2D array [profileIndex][sampleIndex]",
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "number",
+                            "format": "float64"
+                        }
+                    }
+                },
+                "distance": {
+                    "description": "metres: i * binWidth",
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "time": {
+                    "description": "ISO 8601 start_time of each profile's file",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "github_com_physicist2018_lidar-platform-go_pkg_dto.UpdateUserBody": {
             "type": "object",
             "required": [
@@ -1147,7 +1265,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
+	Version:          "2.4.0",
 	Host:             "localhost:8080",
 	BasePath:         "/",
 	Schemes:          []string{},

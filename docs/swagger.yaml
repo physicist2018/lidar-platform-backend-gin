@@ -146,6 +146,27 @@ definitions:
       updated_at:
         type: string
     type: object
+  github_com_physicist2018_lidar-platform-go_pkg_dto.Stage0DataResponse:
+    properties:
+      data:
+        description: 2D array [profileIndex][sampleIndex]
+        items:
+          items:
+            format: float64
+            type: number
+          type: array
+        type: array
+      distance:
+        description: 'metres: i * binWidth'
+        items:
+          type: number
+        type: array
+      time:
+        description: ISO 8601 start_time of each profile's file
+        items:
+          type: string
+        type: array
+    type: object
   github_com_physicist2018_lidar-platform-go_pkg_dto.UpdateUserBody:
     properties:
       email:
@@ -513,6 +534,64 @@ paths:
       summary: Get processing run status
       tags:
       - experiments
+  /results/{stage}/data:
+    post:
+      description: Returns distance axis, time series, and a 2D array of processed
+        signals for a stage0 run.
+      parameters:
+      - description: Processing run ID
+        in: path
+        name: stage
+        required: true
+        type: integer
+      - description: 'Wavelength (default: 532)'
+        in: query
+        name: wavelength
+        type: number
+      - description: 'Polarization (default: p)'
+        in: query
+        name: polarization
+        type: string
+      - description: 'Device ID (default: BT)'
+        in: query
+        name: device_id
+        type: string
+      - description: Start time in RFC3339 format
+        in: query
+        name: time_from
+        type: string
+      - description: End time in RFC3339 format
+        in: query
+        name: time_to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.Stage0DataResponse'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/github_com_physicist2018_lidar-platform-go_pkg_dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get stage0 processed data
+      tags:
+      - results
   /users:
     get:
       description: Returns a paginated list of users with optional filtering by role,

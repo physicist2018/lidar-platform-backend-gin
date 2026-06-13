@@ -38,3 +38,16 @@ func (r *ProcessedSignalRepositoryImpl) FindByProcessingRunID(ctx context.Contex
 	}
 	return signals, nil
 }
+
+func (r *ProcessedSignalRepositoryImpl) FindByProcessingRunIDFiltered(
+	ctx context.Context,
+	runID uint,
+	filter entity.ProcessedSignalFilter,
+) ([]entity.ProcessedSignal, error) {
+	op := "ProcessedSignalRepository.FindByProcessingRunIDFiltered"
+	signals, err := r.DataSource.GetByProcessingRunIDFiltered(ctx, runID, filter)
+	if err != nil {
+		return nil, response.InternalError(op, err)
+	}
+	return signals, nil
+}

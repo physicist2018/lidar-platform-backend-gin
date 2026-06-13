@@ -9,4 +9,5 @@ import (
 type ProcessedSignalRepository interface {
 	BatchCreate(ctx context.Context, signals []entity.ProcessedSignal) error
 	FindByProcessingRunID(ctx context.Context, runID uint) ([]entity.ProcessedSignal, error)
+	FindByProcessingRunIDFiltered(ctx context.Context, runID uint, filter entity.ProcessedSignalFilter) ([]entity.ProcessedSignal, error)
 }

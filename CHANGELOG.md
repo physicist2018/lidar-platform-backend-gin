@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.0] — 2026-06-13
+
+### Added
+
+- **Новый endpoint** `POST /results/{stage}/data` — получение stage0-данных (distance, 2D data, time).
+- **Поле `FileID` в `ProcessedSignal`** — для связывания с файлом и получения времени измерения.
+- **Новый use case** `GetStage0DataUseCase` — фильтрация по wavelength, polarization, device_id, временному диапазону.
+- **Time-фильтр в `GetByProcessingRunIDFiltered`** — JOIN с `lidar_files` для временной селекции профилей.
+- **`FileID` теперь копируется в glued-профили (DeviceID="BG")** из template-профиля при склейке.
+
 ## [2.3.0] — 2026-06-12
 
 ### Removed

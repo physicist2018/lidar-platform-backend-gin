@@ -56,9 +56,10 @@ func (u *processExperimentUseCaseImpl) Execute(
 		}
 	}
 
-	// Remove all previous runs of the same algorithm for this experiment,
-	// including their dependents (cascade delete).
-	oldRuns, err := u.procRepo.FindByExperimentIDAndAlgorithm(ctx, experimentID, algorithm)
+	// Remove all previous processing runs for this experiment,
+	// including their dependents across all algorithms (cascade delete).
+	// Each experiment can only have one active set of processing results.
+	oldRuns, err := u.procRepo.FindByExperimentID(ctx, experimentID)
 	if err != nil {
 		return nil, fmt.Errorf("find old runs: %w", err)
 	}

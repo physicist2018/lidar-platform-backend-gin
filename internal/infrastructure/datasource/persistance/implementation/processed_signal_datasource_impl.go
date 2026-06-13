@@ -2,6 +2,7 @@ package implementation
 
 import (
 	"context"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -30,6 +31,7 @@ func (d *ProcessedSignalDataSourceImpl) BatchCreate(ctx context.Context, signals
 			ID:                s.ID,
 			ProcessingRunID:   s.ProcessingRunID,
 			OriginalProfileID: s.OriginalProfileID,
+			FileID:            s.FileID,
 			Wavelength:        s.Wavelength,
 			Polarization:      s.Polarization,
 			IsPhoton:          s.IsPhoton,
@@ -66,6 +68,7 @@ func (d *ProcessedSignalDataSourceImpl) GetByProcessingRunID(ctx context.Context
 			ID:                e.ID,
 			ProcessingRunID:   e.ProcessingRunID,
 			OriginalProfileID: e.OriginalProfileID,
+			FileID:            e.FileID,
 			Wavelength:        e.Wavelength,
 			Polarization:      e.Polarization,
 			IsPhoton:          e.IsPhoton,
@@ -89,4 +92,62 @@ func (d *ProcessedSignalDataSourceImpl) DeleteByProcessingRunIDs(ctx context.Con
 		return err
 	}
 	return nil
+}
+
+func (d *ProcessedSignalDataSourceImpl) GetByProcessingRunIDFiltered(
+	ctx context.Context,
+	runID uint,
+	filter entity.ProcessedSignalFilter,
+) ([]entity.ProcessedSignal, error) {
+	var dbEntities []struct {
+		dbEntity.ProcessedSignalEntity
+		FileStartTime *time.Time `gorm:"column:file_start_time"`
+	}
+
+	query := d.DB.WithContext(ctx).
+		Table("processed_signals").
+		Select("processed_signals.*, lidar_files.start_time AS file_start_time").
+		Joins("LEFT JOIN lidar_files ON lidar_files.id = processed_signals.file_id").
+		Where("processed_signals.processing_run_id = ?", runID)
+
+	if filter.Wavelength != nil {
+		query = query.Where("processed_signals.wavelength = ?", *filter.Wavelength)
+	}
+	if filter.Polarization != nil {
+		query = query.Where("processed_signals.polarization = ?", *filter.Polarization)
+	}
+	if filter.DeviceID != nil {
+		query = query.Where("processed_signals.device_id = ?", *filter.DeviceID)
+	}
+	if filter.TimeFrom != nil {
+		query = query.Where("(lidar_files.start_time >= ? OR processed_signals.file_id = 0)", *filter.TimeFrom)
+	}
+	if filter.TimeTo != nil {
+		query = query.Where("(lidar_files.start_time <= ? OR processed_signals.file_id = 0)", *filter.TimeTo)
+	}
+
+	query = query.Order("lidar_files.start_time ASC NULLS LAST")
+
+	if err := query.Find(&dbEntities).Error; err != nil {
+		return nil, err
+	}
+
+	signals := make([]entity.ProcessedSignal, len(dbEntities))
+	for i, e := range dbEntities {
+		signals[i] = entity.ProcessedSignal{
+			ID:                e.ID,
+			ProcessingRunID:   e.ProcessingRunID,
+			OriginalProfileID: e.OriginalProfileID,
+			FileID:            e.FileID,
+			FileStartTime:     e.FileStartTime,
+			Wavelength:        e.Wavelength,
+			Polarization:      e.Polarization,
+			IsPhoton:          e.IsPhoton,
+			DeviceID:          e.DeviceID,
+			BinWidth:          e.BinWidth,
+			NDataPoints:       e.NDataPoints,
+			Signal:            []float64(e.Signal),
+		}
+	}
+	return signals, nil
 }

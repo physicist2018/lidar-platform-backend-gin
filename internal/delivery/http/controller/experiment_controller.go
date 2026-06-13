@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
@@ -29,6 +30,7 @@ type ExperimentController struct {
 	GetExperimentChannelsUC  usecase.GetExperimentChannelsUseCase
 	ProcessExperimentUC      usecase.ProcessExperimentUseCase
 	GetProcessingRunStatusUC usecase.GetProcessingRunStatusUseCase
+	GetStage0DataUC          usecase.GetStage0DataUseCase
 	Validate                 *validator.Validate
 }
 
@@ -40,6 +42,7 @@ func NewExperimentController(
 	getChannels usecase.GetExperimentChannelsUseCase,
 	process usecase.ProcessExperimentUseCase,
 	getProcessStatus usecase.GetProcessingRunStatusUseCase,
+	getStage0Data usecase.GetStage0DataUseCase,
 	validate *validator.Validate,
 ) *ExperimentController {
 	return &ExperimentController{
@@ -50,6 +53,7 @@ func NewExperimentController(
 		GetExperimentChannelsUC:  getChannels,
 		ProcessExperimentUC:      process,
 		GetProcessingRunStatusUC: getProcessStatus,
+		GetStage0DataUC:          getStage0Data,
 		Validate:                 validate,
 	}
 }
@@ -310,4 +314,60 @@ func (ctrl *ExperimentController) GetProcessingStatus(w http.ResponseWriter, r *
 	}
 
 	response.JSON(w, http.StatusOK, mapper.ToProcessingRunResponse(run))
+}
+
+// GetStage0Data godoc
+//
+//	@Summary		Get stage0 processed data
+//	@Description	Returns distance axis, time series, and a 2D array of processed signals for a stage0 run.
+//	@Tags			results
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			stage		path		int		true	"Processing run ID"
+//	@Param			wavelength	query		number	false	"Wavelength (default: 532)"
+//	@Param			polarization	query		string	false	"Polarization (default: p)"
+//	@Param			device_id	query		string	false	"Device ID (default: BT)"
+//	@Param			time_from	query		string	false	"Start time in RFC3339 format"
+//	@Param			time_to		query		string	false	"End time in RFC3339 format"
+//	@Success		200	{object}	dto.Stage0DataResponse
+//	@Failure		400	{object}	dto.ErrorResponse	"Bad request"
+//	@Failure		401	{object}	dto.ErrorResponse	"Unauthorized"
+//	@Failure		404	{object}	dto.ErrorResponse	"Not found"
+//	@Failure		500	{object}	dto.ErrorResponse	"Internal server error"
+//	@Router			/results/{stage}/data [post]
+func (ctrl *ExperimentController) GetStage0Data(w http.ResponseWriter, r *http.Request) {
+	stageStr := chi.URLParam(r, "stage")
+	runID, err := parseUint(stageStr)
+	if err != nil {
+		response.Error(w, http.StatusBadRequest, "invalid stage (run ID)")
+		return
+	}
+
+	q := r.URL.Query()
+
+	wavelength := parseFloat64(q.Get("wavelength"), 532)
+	polarization := strDefault(q.Get("polarization"), "p")
+	deviceID := strDefault(q.Get("device_id"), "BT")
+	timeFrom := parseTimeQuery(q.Get("time_from"))
+	timeTo := parseTimeQuery(q.Get("time_to"))
+
+	result, err := ctrl.GetStage0DataUC.Execute(r.Context(), runID, wavelength, polarization, deviceID, timeFrom, timeTo)
+	if err != nil {
+		response.Error(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	// Format times as ISO 8601 strings
+	timeStrs := make([]string, len(result.Time))
+	for i, t := range result.Time {
+		timeStrs[i] = t.Format(time.RFC3339)
+	}
+
+	resp := dto.Stage0DataResponse{
+		Distance: result.Distance,
+		Data:     result.Data,
+		Time:     timeStrs,
+	}
+
+	response.JSON(w, http.StatusOK, resp)
 }

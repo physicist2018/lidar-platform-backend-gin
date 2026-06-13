@@ -8,6 +8,7 @@ type ProcessedSignalEntity struct {
 	ID                uint                   `gorm:"primaryKey"`
 	ProcessingRunID   uint                   `gorm:"not null;index"`
 	OriginalProfileID uint                   `gorm:"not null;index"`
+	FileID            uint                   `gorm:"not null;default:0;index"`
 	Wavelength        float64                `gorm:"not null"`
 	Polarization      string                 `gorm:"size:10;not null"`
 	IsPhoton          bool                   `gorm:"not null"`
