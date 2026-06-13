@@ -226,7 +226,7 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
   title: Lidar Platform API
-  version: "1.0"
+  version: 2.4.0
 paths:
   /auth/login:
     post:

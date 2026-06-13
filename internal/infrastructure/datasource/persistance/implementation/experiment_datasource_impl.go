@@ -44,8 +44,11 @@ func (d *ExperimentDataSourceImpl) Create(ctx context.Context, exp *entity.Exper
 
 func (d *ExperimentDataSourceImpl) Update(ctx context.Context, exp *entity.Experiment) error {
 	updates := map[string]interface{}{
-		"title":  exp.Title,
 		"status": string(exp.Status),
+	}
+
+	if exp.Title != "" {
+		updates["title"] = exp.Title
 	}
 
 	if exp.UserID != 0 {
